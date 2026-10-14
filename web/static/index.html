@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小微电商多渠道资金对账与年审异常核算系统 (StarOfCAU)</title>
+    <style>
+        :root {
+            --primary: #0284c7;
+            --primary-dark: #0369a1;
+            --primary-light: #e0f2fe;
+            --success: #10b981;
+            --success-bg: #ecfdf5;
+            --warning: #f59e0b;
+            --warning-bg: #fffbeb;
+            --danger: #ef4444;
+            --danger-bg: #fef2f2;
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --border: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: var(--bg-body);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+        }
+        /* 侧边导航栏 */
+        .sidebar {
+            width: 260px;
+            background: #0f172a;
+            color: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            position: fixed;
+            top: 0; bottom: 0; left: 0;
+            z-index: 50;
+        }
+        .brand {
+            padding: 24px 20px;
+            border-bottom: 1px solid #1e293b;
+        }
+        .brand h2 { font-size: 17px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
+        .brand p { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+        .nav-menu { padding: 16px 10px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+        .nav-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 14px; border-radius: 8px;
+            color: #94a3b8; font-size: 14px; font-weight: 500;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .nav-item:hover { background: #1e293b; color: #f8fafc; }
+        .nav-item.active { background: var(--primary); color: #fff; }
+        .user-panel {
+            padding: 16px 20px;
+            border-top: 1px solid #1e293b;
+            background: #090d16;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .user-info { display: flex; align-items: center; gap: 10px; }
+        .avatar {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: var(--primary); color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 14px;
+        }
+        .user-meta h4 { font-size: 13px; color: #fff; }
+        .user-meta span { font-size: 11px; color: #38bdf8; background: #0c4a6e; padding: 2px 6px; border-radius: 4px; }
+        .btn-logout { background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 16px; }
+        .btn-logout:hover { color: #ef4444; }
+
+        /* 主工作区 */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 28px 36px;
+            max-width: 1380px;
+        }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .page-title h1 { font-size: 24px; font-weight: 700; color: var(--text-main); }
+        .page-title p { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+        .actions { display: flex; gap: 12px; }
+
+        /* 统一卡片与网格 */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .kpi-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        }
+        .kpi-card .label { font-size: 13px; color: var(--text-muted); }
+        .kpi-card .value { font-size: 26px; font-weight: 700; color: var(--text-main); margin: 6px 0 2px; }
+        .kpi-card .sub { font-size: 12px; color: var(--text-muted); }
+
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+        .panel-title { font-size: 16px; font-weight: 600; color: var(--text-main); }
+
+        /* 按钮与徽章 */
+        .btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 9px 16px; border-radius: 8px; font-size: 13px;
+            font-weight: 500; cursor: pointer; border: 1px solid transparent;
+            transition: all 0.15s;
+        }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-secondary { background: #fff; border-color: var(--border); color: var(--text-main); }
+        .btn-secondary:hover { background: #f1f5f9; }
+        .btn-success { background: var(--success); color: #fff; }
+
+        .badge {
+            display: inline-block; padding: 4px 8px; border-radius: 6px;
+            font-size: 12px; font-weight: 500;
+        }
+        .badge-success { background: var(--success-bg); color: #047857; }
+        .badge-warning { background: var(--warning-bg); color: #b45309; }
+        .badge-danger { background: var(--danger-bg); color: #b91c1c; }
+        .badge-info { background: var(--primary-light); color: var(--primary-dark); }
+
+        /* 表格样式 */
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--border); font-size: 13px; }
+        th { background: #f8fafc; color: #475569; font-weight: 600; }
+        tr:hover { background: #fbfcfe; }
+
+        /* 表单样式 */
+        .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .form-section { background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+        .form-section h3 { font-size: 14px; font-weight: 600; margin-bottom: 14px; color: var(--primary-dark); border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 12px; color: #475569; margin-bottom: 4px; font-weight: 500; }
+        .form-group input, .form-group select {
+            width: 100%; padding: 8px 12px; border: 1px solid var(--border);
+            border-radius: 6px; font-size: 13px; outline: none; background: #fff;
+        }
+        .form-group input:focus, .form-group select:focus { border-color: var(--primary); }
+
+        /* 登录弹窗 (全屏遮罩) */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 100;
+        }
+        .modal {
+            background: #fff; width: 420px; border-radius: 16px;
+            padding: 32px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+        }
+        .modal-header { text-align: center; margin-bottom: 24px; }
+        .modal-header h2 { font-size: 20px; font-weight: 700; color: #0f172a; }
+        .modal-header p { font-size: 13px; color: #64748b; margin-top: 4px; }
+        .quick-roles { display: flex; gap: 8px; margin-top: 16px; }
+        .quick-roles button { flex: 1; padding: 6px; font-size: 11px; border: 1px solid var(--border); border-radius: 6px; background: #f8fafc; cursor: pointer; }
+        .quick-roles button:hover { background: var(--primary-light); border-color: var(--primary); color: var(--primary-dark); }
+
+        .hidden { display: none !important; }
+        .advice-code { font-family: monospace; font-size: 12px; background: #f1f5f9; padding: 6px 10px; border-radius: 4px; color: #0369a1; }
+    </style>
+</head>
+<body>
+
+    <!-- 登录弹窗 -->
+    <div id="loginModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>🏛️ 电商资金对账与核算工作台</h2>
+                <p>基于《企业会计准则》与大厂 Sales Ops 规范开发</p>
+            </div>
+            <div class="form-group">
+                <label>登录用户名</label>
+                <input type="text" id="loginUsername" placeholder="输入用户名">
+            </div>
+            <div class="form-group">
+                <label>密码</label>
+                <input type="password" id="loginPassword" placeholder="输入密码">
+            </div>
+            <button class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 8px;" onclick="handleLogin()">登录进入工作台</button>
+            <div style="margin-top: 20px; border-top: 1px solid #f1f5f9; padding-top: 14px;">
+                <label style="font-size: 11px; color: #94a3b8;">一键快速填入测试角色：</label>
+                <div class="quick-roles">
+                    <button onclick="fillRole('auditor', 'auditor123')">🧑‍💼 年审主审(StarOfCAU)</button>
+                    <button onclick="fillRole('operator', 'operator123')">🏪 星澜电商主管</button>
+                    <button onclick="fillRole('admin', 'admin123')">⚙️ 超级管理员</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 侧边导航栏 -->
+    <div class="sidebar">
+        <div class="brand">
+            <h2><span>📦</span> Reconcile Audit</h2>
+            <p>小微电商三方对账与借贷试算系统</p>
+        </div>
+        <div class="nav-menu">
+            <div class="nav-item active" onclick="switchTab('dashboard')">📊 对账大盘</div>
+            <div class="nav-item" onclick="switchTab('realtime')">✍️ 实时单据录入</div>
+            <div class="nav-item" onclick="switchTab('discrepancies')">📑 审计差错审核</div>
+            <div class="nav-item" onclick="switchTab('transactions')">📜 交易流水明细</div>
+            <div class="nav-item" onclick="switchTab('trial_balance')">🏛️ 资金调节平衡表</div>
+        </div>
+        <div class="user-panel">
+            <div class="user-info">
+                <div class="avatar" id="userAvatar">锐</div>
+                <div class="user-meta">
+                    <h4 id="userFullName">李锐</h4>
+                    <span id="userRole">审计员</span>
+                </div>
+            </div>
+            <button class="btn-logout" title="退出登录" onclick="handleLogout()">⏻</button>
+        </div>
+    </div>
+
+    <!-- 主工作区 -->
+    <div class="main-content">
+        <!-- 顶部通栏 -->
+        <div class="top-bar">
+            <div class="page-title">
+                <h1 id="tabTitle">📊 经营对账大盘</h1>
+                <p id="tabDesc">三方交易流水对撞、平账率指标与损益侵蚀监控</p>
+            </div>
+            <div class="actions">
+                <button class="btn btn-secondary" onclick="triggerBatchGen(300)">⚡ 注入300笔压测脏数据</button>
+                <button class="btn btn-primary" onclick="refreshCurrentTab()">🔄 刷新数据</button>
+            </div>
+        </div>
+
+        <!-- 页面 1: 仪表盘 -->
+        <div id="view-dashboard">
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="label">对账总流水规模</div>
+                    <div class="value" id="kpiTotal">0 笔</div>
+                    <div class="sub">三方复合闭环核验</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="label">自动平账率 (Match Rate)</div>
+                    <div class="value" style="color: #10b981;" id="kpiRate">0.0%</div>
+                    <div class="sub" id="kpiMatched">已平账 0 笔</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="label">待查审计差错 (Exceptions)</div>
+                    <div class="value" style="color: #e11d48;" id="kpiDisc">0 笔</div>
+                    <div class="sub">触发审计预警与挂账</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="label">隐藏利润侵蚀总额</div>
+                    <div class="value" style="color: #f59e0b;" id="kpiLoss">¥0.00</div>
+                    <div class="sub" id="kpiErosion">侵蚀毛利率 0%</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">🏛️ 《资金对账调节平衡表》即时验算状态</div>
+                    <div id="balanceBadge"><span class="badge badge-success">✓ 借贷试算平衡已闭合</span></div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>核算项目</th>
+                            <th style="text-align: right;">发生金额</th>
+                            <th>会计解释与准则依据</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trialSummaryBody">
+                        <tr><td>业务订单系统应收净额</td><td style="text-align: right; font-weight: 600;" id="sumBiz">¥0.00</td><td>电商后台主营业务收入扣减退货应收</td></tr>
+                        <tr><td>支付渠道实际入账净额</td><td style="text-align: right; font-weight: 600; color: #0284c7;" id="sumChannel">¥0.00</td><td>支付宝/银行存款实际清算净流水</td></tr>
+                        <tr><td>渠道手续费及暗扣佣金</td><td style="text-align: right; color: #e11d48;" id="sumFees">¥0.00</td><td>销售费用/财务费用（含千六与跳档提点）</td></tr>
+                        <tr><td>仓储物流与超重履约扣费</td><td style="text-align: right; color: #e11d48;" id="sumShipping">¥0.00</td><td>主营业务成本（含运费超重罚款与运费险）</td></tr>
+                        <tr style="background: #f8fafc; font-weight: 700;">
+                            <td>真实经营毛利 (Gross Profit)</td>
+                            <td style="text-align: right; color: #10b981;" id="sumProfit">¥0.00</td>
+                            <td>真实毛利率: <span id="sumMargin">0%</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 页面 2: 实时单据录入 -->
+        <div id="view-realtime" class="hidden">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">✍️ 单笔交易三方联动录入与即时核算引擎</div>
+                    <div>
+                        <button class="btn btn-secondary" onclick="presetForm('normal')">预填正常单</button>
+                        <button class="btn btn-secondary" onclick="presetForm('overweight')">预填超重扣费单</button>
+                        <button class="btn btn-secondary" onclick="presetForm('commission')">预填佣金跳档暗扣</button>
+                        <button class="btn btn-secondary" onclick="presetForm('ins_delay')">预填运费险滞后</button>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-section">
+                        <h3>1. 电商业务订单 (Orders)</h3>
+                        <div class="form-group"><label>业务订单号</label><input type="text" id="in_order_id" value="TB_LIVE_2026101401"></div>
+                        <div class="form-group"><label>商品名称</label><input type="text" id="in_product_name" value="法兰绒加厚家居服"></div>
+                        <div class="form-group"><label>商品标价总额 (¥)</label><input type="number" step="0.01" id="in_goods_amount" value="89.90" oninput="calcPayable()"></div>
+                        <div class="form-group"><label>店铺优惠 (¥)</label><input type="number" step="0.01" id="in_shop_discount" value="5.00" oninput="calcPayable()"></div>
+                        <div class="form-group"><label>买家实付应收 (¥)</label><input type="number" step="0.01" id="in_actual_payable" value="84.90" readonly style="background: #e2e8f0; font-weight: 700;"></div>
+                    </div>
+                    <div class="form-section">
+                        <h3>2. 支付收单流水 (Payments)</h3>
+                        <div class="form-group">
+                            <label>收单渠道</label>
+                            <select id="in_channel"><option value="ALIPAY">支付宝 (Alipay)</option><option value="WXPAY">微信支付 (WeChat)</option></select>
+                        </div>
+                        <div class="form-group"><label>渠道实际扣款金额 (¥)</label><input type="number" step="0.01" id="in_pay_amount" value="84.90"></div>
+                        <div class="form-group"><label>渠道手续费/平台佣金 (¥)</label><input type="number" step="0.01" id="in_channel_fee" value="0.51"></div>
+                    </div>
+                    <div class="form-section">
+                        <h3>3. 仓储物流履约 (Logistics)</h3>
+                        <div class="form-group">
+                            <label>承运快递商</label>
+                            <select id="in_carrier"><option value="SF">顺丰速运 (SF)</option><option value="ZTO">中通快递</option></select>
+                        </div>
+                        <div class="form-group"><label>基础运费 (¥)</label><input type="number" step="0.01" id="in_shipping_fee" value="4.50"></div>
+                        <div class="form-group"><label>超重补扣费 (¥)</label><input type="number" step="0.01" id="in_overweight_fee" value="0.00"></div>
+                        <div class="form-group"><label>运费险保费代扣 (¥)</label><input type="number" step="0.01" id="in_ins_fee" value="0.80"></div>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; text-align: right;">
+                    <button class="btn btn-primary" style="padding: 12px 24px; font-size: 14px;" onclick="submitSingleTransaction()">🚀 立即录入并触发三方核验</button>
+                </div>
+            </div>
+
+            <!-- 即时核算结果卡片 -->
+            <div id="liveResultPanel" class="panel hidden" style="border-left: 4px solid var(--primary);">
+                <div class="panel-header">
+                    <div class="panel-title">⚡ 单笔对账即时判定结果</div>
+                    <div id="liveResultBadge"></div>
+                </div>
+                <div id="liveResultContent"></div>
+            </div>
+        </div>
+
+        <!-- 页面 3: 审计差错审核 -->
+        <div id="view-discrepancies" class="hidden">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">📑 待调账审计差错清单（审计底稿）</div>
+                    <div>
+                        <button class="btn btn-secondary" onclick="loadDiscrepancies('PENDING')">只看待处理</button>
+                        <button class="btn btn-secondary" onclick="loadDiscrepancies('RESOLVED')">查看已调账</button>
+                        <button class="btn btn-secondary" onclick="loadDiscrepancies('')">全部差错</button>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 140px;">业务单号</th>
+                            <th style="width: 140px;">差错分类</th>
+                            <th style="width: 100px; text-align: right;">差异金额</th>
+                            <th>异常排查原因</th>
+                            <th>建议会计分录（财会老法师批注）</th>
+                            <th style="width: 100px; text-align: center;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="discrepancyTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 页面 4: 交易流水明细 -->
+        <div id="view-transactions" class="hidden">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">📜 数据库持久化流水查询 (Top 50)</div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>单号 / 流水号</th>
+                            <th>交易主体 / 商品</th>
+                            <th style="text-align: right;">金额</th>
+                            <th>渠道 / 快递</th>
+                            <th>交易时间</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 页面 5: 资金调节平衡表 -->
+        <div id="view-trial_balance" class="hidden">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">🏛️ 《银行存款与各渠道资金对账调节平衡表》</div>
+                    <button class="btn btn-secondary" onclick="window.print()">🖨️ 打印 / 另存为 A4 PDF 审计底稿</button>
+                </div>
+                <div id="trialBalanceContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentToken = localStorage.getItem("token") || "";
+        let currentUser = null;
+
+        // 初始化
+        window.onload = function() {
+            if (currentToken) {
+                checkAuth();
+            } else {
+                showLoginModal();
+            }
+        };
+
+        function showLoginModal() { document.getElementById("loginModal").classList.remove("hidden"); }
+        function hideLoginModal() { document.getElementById("loginModal").classList.add("hidden"); }
+
+        function fillRole(u, p) {
+            document.getElementById("loginUsername").value = u;
+            document.getElementById("loginPassword").value = p;
+        }
+
+        async function handleLogin() {
+            const u = document.getElementById("loginUsername").value.trim();
+            const p = document.getElementById("loginPassword").value.trim();
+            if(!u || !p) return alert("请输入用户名和密码");
+
+            try {
+                const res = await fetch("/api/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username: u, password: p })
+                });
+                const data = await res.json();
+                if(data.code === 0) {
+                    currentToken = data.data.token;
+                    currentUser = data.data;
+                    localStorage.setItem("token", currentToken);
+                    hideLoginModal();
+                    updateUserUI();
+                    loadDashboard();
+                } else {
+                    alert(data.msg);
+                }
+            } catch(e) { alert("网络异常，无法连接后端服务"); }
+        }
+
+        async function checkAuth() {
+            try {
+                const res = await fetch("/api/me", { headers: { "X-Session-Token": currentToken } });
+                const data = await res.json();
+                if(data.code === 0) {
+                    currentUser = data.data;
+                    hideLoginModal();
+                    updateUserUI();
+                    loadDashboard();
+                } else {
+                    showLoginModal();
+                }
+            } catch(e) { showLoginModal(); }
+        }
+
+        function updateUserUI() {
+            if(!currentUser) return;
+            document.getElementById("userFullName").innerText = currentUser.full_name;
+            document.getElementById("userAvatar").innerText = currentUser.full_name.charAt(0);
+            document.getElementById("userRole").innerText = currentUser.role;
+        }
+
+        async function handleLogout() {
+            await fetch("/api/logout", { method: "POST", headers: { "X-Session-Token": currentToken } });
+            localStorage.removeItem("token");
+            currentToken = "";
+            showLoginModal();
+        }
+
+        // 选项卡切换
+        function switchTab(tab) {
+            const views = ["dashboard", "realtime", "discrepancies", "transactions", "trial_balance"];
+            views.forEach(v => {
+                document.getElementById(`view-${v}`).classList.add("hidden");
+            });
+            document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
+
+            document.getElementById(`view-${tab}`).classList.remove("hidden");
+            event.currentTarget.classList.add("active");
+
+            if(tab === "dashboard") loadDashboard();
+            if(tab === "discrepancies") loadDiscrepancies();
+            if(tab === "transactions") loadTransactions();
+            if(tab === "trial_balance") loadTrialBalance();
+        }
+
+        function refreshCurrentTab() {
+            loadDashboard();
+        }
+
+        // 1. 加载大盘
+        async function loadDashboard() {
+            const res = await fetch("/api/dashboard", { headers: { "X-Session-Token": currentToken } });
+            const json = await res.json();
+            if(json.code !== 0) return;
+
+            const sum = json.data.summary;
+            const bal = json.data.balance;
+
+            document.getElementById("kpiTotal").innerText = `${sum.total_orders} 笔`;
+            document.getElementById("kpiRate").innerText = `${sum.matched_rate}%`;
+            document.getElementById("kpiMatched").innerText = `已自动平账 ${sum.matched_count} 笔`;
+            document.getElementById("kpiDisc").innerText = `${sum.discrepancy_count} 笔`;
+            document.getElementById("kpiLoss").innerText = `¥${bal.total_hidden_loss}`;
+            document.getElementById("kpiErosion").innerText = `侵蚀毛利率 ${bal.erosion_rate}%`;
+
+            document.getElementById("sumBiz").innerText = `¥${sum.total_biz_turnover}`;
+            document.getElementById("sumChannel").innerText = `¥${sum.total_channel_turnover}`;
+            document.getElementById("sumFees").innerText = `¥${sum.total_channel_fees}`;
+            document.getElementById("sumShipping").innerText = `¥${sum.total_shipping_costs}`;
+            document.getElementById("sumProfit").innerText = `¥${bal.gross_profit}`;
+            document.getElementById("sumMargin").innerText = `${bal.actual_profit_margin}%`;
+
+            const badge = document.getElementById("balanceBadge");
+            if(bal.is_balanced) {
+                badge.innerHTML = `<span class="badge badge-success">✓ 借贷试算平衡已闭合 (未解释差额: ¥0.00)</span>`;
+            } else {
+                badge.innerHTML = `<span class="badge badge-danger">✗ 试算未平 (未解释差额: ¥${bal.unexplained_diff})</span>`;
+            }
+        }
+
+        // 2. 实时单据录入
+        function calcPayable() {
+            const g = parseFloat(document.getElementById("in_goods_amount").value) || 0;
+            const d = parseFloat(document.getElementById("in_shop_discount").value) || 0;
+            const p = Math.max(0, g - d);
+            document.getElementById("in_actual_payable").value = p.toFixed(2);
+            document.getElementById("in_pay_amount").value = p.toFixed(2);
+            document.getElementById("in_channel_fee").value = (p * 0.006).toFixed(2);
+        }
+
+        function presetForm(type) {
+            document.getElementById("in_order_id").value = `TB_LIVE_${Date.now().toString().slice(-6)}`;
+            calcPayable();
+
+            if(type === 'normal') {
+                document.getElementById("in_overweight_fee").value = "0.00";
+                document.getElementById("in_channel_fee").value = (parseFloat(document.getElementById("in_actual_payable").value) * 0.006).toFixed(2);
+            } else if(type === 'overweight') {
+                document.getElementById("in_overweight_fee").value = "6.00";
+            } else if(type === 'commission') {
+                document.getElementById("in_channel_fee").value = (parseFloat(document.getElementById("in_actual_payable").value) * 0.05).toFixed(2);
+            } else if(type === 'ins_delay') {
+                document.getElementById("in_shipping_fee").value = "4.50";
+            }
+        }
+
+        async function submitSingleTransaction() {
+            const payload = {
+                order_id: document.getElementById("in_order_id").value,
+                product_name: document.getElementById("in_product_name").value,
+                goods_amount: document.getElementById("in_goods_amount").value,
+                shop_discount: document.getElementById("in_shop_discount").value,
+                platform_coupon: "0.00",
+                freight_fee: "0.00",
+                channel: document.getElementById("in_channel").value,
+                pay_amount: document.getElementById("in_pay_amount").value,
+                channel_fee: document.getElementById("in_channel_fee").value,
+                carrier: document.getElementById("in_carrier").value,
+                shipping_fee: document.getElementById("in_shipping_fee").value,
+                overweight_fee: document.getElementById("in_overweight_fee").value,
+                freight_insurance_fee: document.getElementById("in_ins_fee").value,
+            };
+
+            const res = await fetch("/api/submit-single", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "X-Session-Token": currentToken },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if(data.code !== 0) return alert(data.msg);
+
+            const panel = document.getElementById("liveResultPanel");
+            panel.classList.remove("hidden");
+
+            const badge = document.getElementById("liveResultBadge");
+            const content = document.getElementById("liveResultContent");
+
+            if(data.data.is_matched) {
+                badge.innerHTML = `<span class="badge badge-success">✓ 判定结果：三方完全平账 (MATCHED)</span>`;
+                content.innerHTML = `<p style="color: #047857; font-size: 14px;">该单据的业务应收、渠道实收与物流履约费用完全吻合，已成功写入 SQLite 数据库并归档入平账池。</p>`;
+            } else {
+                const disc = data.data.discrepancy;
+                badge.innerHTML = `<span class="badge badge-danger">⚠️ 判定结果：检出资金差错 [${disc.type}]</span>`;
+                content.innerHTML = `
+                    <div style="margin-top: 8px;">
+                        <p style="font-size: 14px; color: #b91c1c; font-weight: 600;">差异金额：¥${disc.diff_amount}</p>
+                        <p style="font-size: 13px; color: #475569; margin: 4px 0;"><strong>排查依据：</strong>${disc.reason}</p>
+                        <p style="font-size: 13px; color: #0369a1;"><strong>财会调账分录建议：</strong><span class="advice-code">${disc.advice}</span></p>
+                    </div>
+                `;
+            }
+        }
+
+        // 3. 差错审计列表
+        async function loadDiscrepancies(status = "") {
+            const url = status ? `/api/discrepancies?status=${status}` : `/api/discrepancies`;
+            const res = await fetch(url, { headers: { "X-Session-Token": currentToken } });
+            const data = await res.json();
+            const tbody = document.getElementById("discrepancyTableBody");
+            tbody.innerHTML = "";
+
+            data.data.forEach((d, idx) => {
+                const tr = document.createElement("tr");
+                const isResolved = d.process_status === 'RESOLVED';
+                tr.innerHTML = `
+                    <td><code>${d.order_id}</code></td>
+                    <td><span class="badge ${d.reconcile_status.includes('UNILATERAL') ? 'badge-danger' : 'badge-warning'}">${d.discrepancy_type}</span></td>
+                    <td style="text-align: right; font-weight: 600; color: #e11d48;">¥${d.diff_amount}</td>
+                    <td style="font-size: 12px; color: #475569;">${d.suspect_reason}</td>
+                    <td style="font-size: 12px;"><span class="advice-code">${d.accounting_advice}</span></td>
+                    <td style="text-align: center;">
+                        ${isResolved ? '<span style="color: #10b981; font-size: 12px;">✓ 已调账</span>' : `<button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="resolveDiscrepancy(${d.id})">标为已调账</button>`}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function resolveDiscrepancy(id) {
+            await fetch("/api/discrepancy/resolve", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "X-Session-Token": currentToken },
+                body: JSON.stringify({ id: id })
+            });
+            loadDiscrepancies();
+        }
+
+        // 4. 交易流水
+        async function loadTransactions() {
+            const res = await fetch("/api/transactions?limit=30", { headers: { "X-Session-Token": currentToken } });
+            const data = await res.json();
+            const tbody = document.getElementById("transactionsTableBody");
+            tbody.innerHTML = "";
+
+            data.data.orders.forEach(o => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td><code>${o.order_id}</code></td>
+                    <td>${o.product_name}</td>
+                    <td style="text-align: right; font-weight: 600;">¥${o.actual_payable}</td>
+                    <td><span class="badge badge-info">订单中心</span></td>
+                    <td>${o.created_at}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 5. 资金调节平衡表
+        async function loadTrialBalance() {
+            const res = await fetch("/api/dashboard", { headers: { "X-Session-Token": currentToken } });
+            const json = await res.json();
+            const bal = json.data.balance;
+            const sum = json.data.summary;
+
+            document.getElementById("trialBalanceContent").innerHTML = `
+                <div style="line-height: 1.8; font-size: 14px;">
+                    <p><strong>核算主体</strong>: 星澜商贸 (示例电商主营业务)</p>
+                    <p><strong>编制依据</strong>: 中华人民共和国《企业会计准则第 14 号——收入》及借贷复式记账法</p>
+                    <p><strong>调节日</strong>: 2026年9月30日（对账截止日）</p>
+                    <hr style="border: none; border-top: 1px solid var(--border); margin: 16px 0;">
+                    <table>
+                        <thead><tr><th>会计调节项目</th><th style="text-align: right;">借方 / 贷方净额 (¥)</th><th>说明</th></tr></thead>
+                        <tbody>
+                            <tr><td>一、业务系统账面应收净额</td><td style="text-align: right; font-weight: 700;">¥${sum.total_biz_turnover}</td><td>主营业务收入基线</td></tr>
+                            <tr><td>加：渠道单边已入账（企业未入账款项）</td><td style="text-align: right; color: #0284c7;">¥${bal.type_summary["单边挂账（待查短款/长款）"] || '0.00'}</td><td>其他应付款-待查长款</td></tr>
+                            <tr><td>减：跨期退货退款冲红</td><td style="text-align: right; color: #e11d48;">-¥${bal.type_summary["跨期退款待冲销"] || '0.00'}</td><td>冲减当期主营业务收入</td></tr>
+                            <tr><td>加/减：优惠券分摊与佣金尾差</td><td style="text-align: right;">¥${bal.type_summary["平台扣点与税费差额"] || '0.00'}</td><td>财务费用-结算尾差</td></tr>
+                            <tr style="background: #f8fafc; font-weight: 700;">
+                                <td>二、调节后银行及渠道实际到账金额</td>
+                                <td style="text-align: right; color: #10b981;">¥${sum.total_channel_turnover}</td>
+                                <td>与收单对账单完全相等</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div style="margin-top: 20px; padding: 14px; background: #ecfdf5; border-radius: 8px; color: #047857;">
+                        <strong>审计结论：</strong> 经复式验算，期末未解释差异为 <strong>¥${bal.unexplained_diff}</strong>。符合试算平衡准则，所有单边与时间性差异均已查明并出具调账分录。
+                    </div>
+                </div>
+            `;
+        }
+
+        // 批量压测生成
+        async function triggerBatchGen(cnt) {
+            if(!confirm(`确认注入 ${cnt} 笔真实电商脏数据流水？这将刷新 SQLite 数据库中的业务单据。`)) return;
+            const res = await fetch("/api/generate-batch", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "X-Session-Token": currentToken },
+                body: JSON.stringify({ count: cnt })
+            });
+            const data = await res.json();
+            alert(data.msg);
+            loadDashboard();
+        }
+    </script>
+</body>
+</html>

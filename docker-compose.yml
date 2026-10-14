@@ -1,0 +1,15 @@
+# /* StarOfCAU-BEGIN: Docker Compose Service Config */
+version: '3.8'
+
+services:
+  reconcile-audit-engine:
+    build: .
+    container_name: ecommerce-reconcile-audit
+    ports:
+      - "8088:8088"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+# /* StarOfCAU-END */

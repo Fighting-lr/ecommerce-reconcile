@@ -1,0 +1,12 @@
+# 核心系统采用 Python 3 标准库原生驱动（零第三方依赖即可完整运行：sqlite3, decimal, csv, http.server）
+# 如果在具备外网环境或需要扩展 Web API / 复杂数据科学分析时，可安装以下选装包：
+#
+# FastAPI 扩展（选装）：
+# fastapi>=0.110.0
+# uvicorn>=0.28.0
+# pydantic>=2.6.0
+#
+# 数据科学与 Excel 导出扩展（选装）：
+# pandas>=2.2.0
+# openpyxl>=3.1.2
+# jinja2>=3.1.3
