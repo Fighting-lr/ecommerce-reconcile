@@ -1,7 +1,7 @@
 # /* StarOfCAU-BEGIN: E-Commerce Dirty Data Generator (12 Boundary Cases) */
 """
 小微电商全链路 12 种真实脏数据注入与压测引擎
-作者: StarOfCAU (李锐)
+作者: StarOfCAU (StarOfCAU)
 用途: 模拟真实电商经营中由于网络超时、结算周期滞后、运费险条款、平台佣金暗扣导致的资金差错，
      为对账系统提供极具工业级实战价值的测试数据集。
 """
@@ -45,6 +45,7 @@ class DirtyDataGenerator:
             prod_name, unit_price, cost_price = random.choice(self.products)
             qty = random.randint(1, 3)
             goods_amt = money(unit_price * qty)
+            goods_cost = money(cost_price * qty)
             shop_disc = money(Decimal("5.00") if goods_amt >= Decimal("50.00") else Decimal("0.00"))
             plat_coupon = money(Decimal("10.00") if goods_amt >= Decimal("100.00") else Decimal("0.00"))
             freight = money(Decimal("0.00") if goods_amt >= Decimal("68.00") else Decimal("6.00"))
@@ -61,7 +62,8 @@ class DirtyDataGenerator:
                 orders.append(OrderRecord(
                     order_id=order_id, user_id=user_id, product_name=prod_name,
                     goods_amount=goods_amt, shop_discount=shop_disc, platform_coupon=plat_coupon,
-                    freight_fee=freight, actual_payable=payable, order_status="PAID", created_at=create_time
+                    freight_fee=freight, actual_payable=payable, order_status="PAID", created_at=create_time,
+                    goods_cost=goods_cost
                 ))
                 payments.append(PaymentRecord(
                     pay_flow_id=f"PAY_{order_id}", order_id=order_id, channel="ALIPAY",
@@ -76,21 +78,22 @@ class DirtyDataGenerator:
                 ))
 
             elif dice < 0.88:
-                # 场景 2: 跨月退款（9月收入已确认，10月冲销退款）
+                # 场景 2: 跨月退款（9月收入已确认收款，10月跨期冲销退款）
                 case_name = "CROSS_PERIOD_REFUND"
-                refund_time = (datetime.strptime(create_time, "%Y-%m-%d %H:%M:%S") + timedelta(days=25)).strftime("%Y-%m-%d %H:%M:%S")
+                # 退款发生在 10 月 (跨越 2026-09-30 截止日)
+                refund_time = (datetime(2026, 10, 1, 10, 0, 0) + timedelta(hours=(i % 100) * 2)).strftime("%Y-%m-%d %H:%M:%S")
                 orders.append(OrderRecord(
                     order_id=order_id, user_id=user_id, product_name=prod_name,
                     goods_amount=goods_amt, shop_discount=shop_disc, platform_coupon=plat_coupon,
                     freight_fee=freight, actual_payable=payable, order_status="REFUNDED",
-                    created_at=create_time, refund_amount=payable, refund_time=refund_time
+                    created_at=create_time, goods_cost=goods_cost, refund_amount=payable, refund_time=refund_time
                 ))
                 payments.append(PaymentRecord(
                     pay_flow_id=f"PAY_{order_id}", order_id=order_id, channel="ALIPAY",
                     trans_type="PAY", trans_amount=payable, channel_fee=money(payable * Decimal("0.006")),
                     channel_status="SUCCESS", trans_time=create_time
                 ))
-                # 渠道退款单
+                # 渠道跨期退款流水 (10月入账)
                 payments.append(PaymentRecord(
                     pay_flow_id=f"REF_{order_id}", order_id=order_id, channel="ALIPAY",
                     trans_type="REFUND", trans_amount=money(-payable), channel_fee=money(-payable * Decimal("0.006")),
@@ -111,7 +114,7 @@ class DirtyDataGenerator:
                     order_id=order_id, user_id=user_id, product_name=prod_name,
                     goods_amount=goods_amt, shop_discount=shop_disc, platform_coupon=plat_coupon,
                     freight_fee=freight, actual_payable=payable, order_status="REFUNDED",
-                    created_at=create_time, refund_amount=payable, refund_time=refund_time
+                    created_at=create_time, goods_cost=goods_cost, refund_amount=payable, refund_time=refund_time
                 ))
                 payments.append(PaymentRecord(
                     pay_flow_id=f"PAY_{order_id}", order_id=order_id, channel="ALIPAY",
@@ -137,7 +140,8 @@ class DirtyDataGenerator:
                 orders.append(OrderRecord(
                     order_id=order_id, user_id=user_id, product_name=prod_name,
                     goods_amount=goods_amt, shop_discount=shop_disc, platform_coupon=plat_coupon,
-                    freight_fee=freight, actual_payable=payable, order_status="PAID", created_at=create_time
+                    freight_fee=freight, actual_payable=payable, order_status="PAID", created_at=create_time,
+                    goods_cost=goods_cost
                 ))
                 # 渠道手续费被多扣了
                 higher_fee = money(payable * Decimal("0.05"))
@@ -159,7 +163,8 @@ class DirtyDataGenerator:
                 orders.append(OrderRecord(
                     order_id=order_id, user_id=user_id, product_name=prod_name,
                     goods_amount=goods_amt, shop_discount=shop_disc, platform_coupon=plat_coupon,
-                    freight_fee=freight, actual_payable=payable, order_status="PAID", created_at=create_time
+                    freight_fee=freight, actual_payable=payable, order_status="PAID", created_at=create_time,
+                    goods_cost=goods_cost
                 ))
                 diff_pay = money(payable - Decimal("0.05"))
                 payments.append(PaymentRecord(
@@ -180,7 +185,8 @@ class DirtyDataGenerator:
                 orders.append(OrderRecord(
                     order_id=order_id, user_id=user_id, product_name=prod_name,
                     goods_amount=goods_amt, shop_discount=shop_disc, platform_coupon=plat_coupon,
-                    freight_fee=freight, actual_payable=payable, order_status="PAID", created_at=create_time
+                    freight_fee=freight, actual_payable=payable, order_status="PAID", created_at=create_time,
+                    goods_cost=goods_cost
                 ))
                 payments.append(PaymentRecord(
                     pay_flow_id=f"PAY_{order_id}", order_id=order_id, channel="ALIPAY",
@@ -197,7 +203,7 @@ class DirtyDataGenerator:
             elif dice < 0.97:
                 # 场景 7: 支付成功但业务掉单（渠道单边账 - 待查长款）
                 case_name = "UNILATERAL_DROPPED_BIZ_ORDER"
-                # 业务订单表里没有这一单（或记录为未支付取消），但支付宝流水里确实扣了款
+                # 业务订单表里没有这一单，但支付宝流水里扣了款
                 payments.append(PaymentRecord(
                     pay_flow_id=f"PAY_{order_id}", order_id=order_id, channel="WXPAY",
                     trans_type="PAY", trans_amount=payable, channel_fee=money(payable * Decimal("0.006")),
@@ -205,24 +211,27 @@ class DirtyDataGenerator:
                 ))
 
             elif dice < 0.98:
-                # 场景 8: 业务下单未付款超时（业务单边账）
+                # 场景 8: 业务单边账（业务标记已支付发货，但渠道漏记未到账）
                 case_name = "UNILATERAL_ABANDONED_ORDER"
                 orders.append(OrderRecord(
                     order_id=order_id, user_id=user_id, product_name=prod_name,
                     goods_amount=goods_amt, shop_discount=shop_disc, platform_coupon=plat_coupon,
-                    freight_fee=freight, actual_payable=payable, order_status="CLOSED", created_at=create_time
+                    freight_fee=freight, actual_payable=payable, order_status="PAID", created_at=create_time,
+                    goods_cost=goods_cost
                 ))
 
             elif dice < 0.99:
-                # 场景 9: T+1 跨期在途结算
+                # 场景 9: T+1 跨期在途结算 (订单于9月30日支付，资金10月1日划拨入账)
                 case_name = "IN_TRANSIT_SETTLEMENT_LAG"
+                eom_create_time = (datetime(2026, 9, 30, 20, 0, 0) + timedelta(minutes=(i % 180))).strftime("%Y-%m-%d %H:%M:%S")
                 orders.append(OrderRecord(
                     order_id=order_id, user_id=user_id, product_name=prod_name,
                     goods_amount=goods_amt, shop_discount=shop_disc, platform_coupon=plat_coupon,
-                    freight_fee=freight, actual_payable=payable, order_status="PAID", created_at=create_time
+                    freight_fee=freight, actual_payable=payable, order_status="PAID", created_at=eom_create_time,
+                    goods_cost=goods_cost
                 ))
-                # 支付时间晚一天入账
-                lagged_time = (datetime.strptime(create_time, "%Y-%m-%d %H:%M:%S") + timedelta(days=2)).strftime("%Y-%m-%d %H:%M:%S")
+                # 支付结算时间晚至次月入账 (跨越截止日 2026-09-30 23:59:59)
+                lagged_time = (datetime(2026, 10, 1, 9, 30, 0) + timedelta(minutes=(i % 180))).strftime("%Y-%m-%d %H:%M:%S")
                 payments.append(PaymentRecord(
                     pay_flow_id=f"PAY_{order_id}", order_id=order_id, channel="UNIONPAY",
                     trans_type="PAY", trans_amount=payable, channel_fee=money(payable * Decimal("0.006")),
@@ -232,7 +241,7 @@ class DirtyDataGenerator:
                     tracking_no=f"SF_{order_id}", order_id=order_id, carrier="SF",
                     shipping_fee=Decimal("4.50"), overweight_fee=Decimal("0.00"),
                     freight_insurance_fee=Decimal("0.80"), insurance_claim_amount=Decimal("0.00"),
-                    ship_time=create_time, delivery_status="DELIVERED"
+                    ship_time=eom_create_time, delivery_status="DELIVERED"
                 ))
 
             else:
@@ -241,7 +250,8 @@ class DirtyDataGenerator:
                 orders.append(OrderRecord(
                     order_id=order_id, user_id=user_id, product_name=prod_name,
                     goods_amount=goods_amt, shop_discount=shop_disc, platform_coupon=plat_coupon,
-                    freight_fee=freight, actual_payable=payable, order_status="PAID", created_at=create_time
+                    freight_fee=freight, actual_payable=payable, order_status="PAID", created_at=create_time,
+                    goods_cost=goods_cost
                 ))
                 payments.append(PaymentRecord(
                     pay_flow_id=f"PAY_{order_id}", order_id=order_id, channel="ALIPAY",
@@ -276,9 +286,9 @@ class DirtyDataGenerator:
         # 1. 业务订单表
         with open(os.path.join(output_dir, "orders.csv"), "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
-            writer.writerow(["order_id", "user_id", "product_name", "goods_amount", "shop_discount", "platform_coupon", "freight_fee", "actual_payable", "order_status", "created_at", "refund_amount", "refund_time"])
+            writer.writerow(["order_id", "user_id", "product_name", "goods_amount", "shop_discount", "platform_coupon", "freight_fee", "actual_payable", "order_status", "created_at", "goods_cost", "refund_amount", "refund_time"])
             for o in orders:
-                writer.writerow([o.order_id, o.user_id, o.product_name, str(o.goods_amount), str(o.shop_discount), str(o.platform_coupon), str(o.freight_fee), str(o.actual_payable), o.order_status, o.created_at, str(o.refund_amount), o.refund_time or ""])
+                writer.writerow([o.order_id, o.user_id, o.product_name, str(o.goods_amount), str(o.shop_discount), str(o.platform_coupon), str(o.freight_fee), str(o.actual_payable), o.order_status, o.created_at, str(o.goods_cost), str(o.refund_amount), o.refund_time or ""])
 
         # 2. 支付渠道流水表
         with open(os.path.join(output_dir, "payments.csv"), "w", newline="", encoding="utf-8") as f:

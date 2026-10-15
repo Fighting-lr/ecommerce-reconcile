@@ -1,7 +1,7 @@
 # /* StarOfCAU-BEGIN: Authentication & Role-Based Access Control (RBAC) */
 """
 小微电商对账系统 - 用户鉴权与角色权限引擎
-作者: StarOfCAU (李锐)
+作者: StarOfCAU (StarOfCAU)
 安全特性:
 1. 采用 SHA-256 + 动态盐 (Salt) 进行密码哈希，杜绝明文存储
 2. 内存 Session 会话令牌（支持过期与角色校验）

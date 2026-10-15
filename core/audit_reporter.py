@@ -1,7 +1,7 @@
 # /* StarOfCAU-BEGIN: Printable HTML & Markdown Audit Report Generator */
 """
 审计底稿与电商资金对账报告渲染器
-作者: StarOfCAU (李锐)
+作者: StarOfCAU (StarOfCAU)
 特点: 
 1. 纯原生 Python 字符串模板渲染（零外部模板引擎依赖）
 2. 内置像素级响应式 CSS 与 @media print 打印样式（一键另存为 A4 审计底稿 PDF）
@@ -159,7 +159,7 @@ class AuditReporter:
                 <p>涵盖业务订单中心 (Orders) · 支付渠道收单流水 (Payments) · 仓储物流与运费险履约 (Logistics)</p>
             </div>
             <div class="header-meta">
-                <div>编制团队: <strong>StarOfCAU (李锐)</strong></div>
+                <div>编制团队: <strong>StarOfCAU (StarOfCAU)</strong></div>
                 <div>核算基准: <strong>《企业会计准则》复式记账法</strong></div>
                 <div>试算状态: {balance_badge}</div>
             </div>

@@ -1,11 +1,12 @@
 # /* StarOfCAU-BEGIN: Core Data Models & Financial Types */
 """
 小微电商多渠道资金对账与年审异常核算系统 - 数据模型定义
-作者: StarOfCAU (李锐)
-特点: 
+作者: StarOfCAU (StarOfCAU)
+特性: 
 1. 强制使用 decimal.Decimal 杜绝浮点数精度丢失 (0.1 + 0.2 != 0.3)
-2. 规范化电商三方交易模型（业务订单、支付渠道流水、物流履约）
-3. 审计差异分类模型（符合大厂清结算与事务所年审规范）
+2. 规范化电商三方交易模型（业务订单、支付渠道流水、物流履约），支持商品采购成本 (COGS)
+3. 规范对账规则与账期配置 (ReconcileConfig)
+4. 审计差异分类模型（符合大厂清结算与事务所年审规范，支持调账凭证与工作流）
 """
 
 from dataclasses import dataclass, field
@@ -14,7 +15,7 @@ from enum import Enum
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
-# 精度格式化工具
+
 def money(val: Any) -> Decimal:
     """转换为保留两位小数的 Decimal 金额（四舍五入）"""
     if val is None or val == "":
@@ -36,7 +37,7 @@ class ReconcileStatus(str, Enum):
     UNILATERAL_CHANNEL = "UNILATERAL_CHANNEL"     # 渠道单边账 (渠道扣款成功，业务端掉单)
     UNILATERAL_BIZ = "UNILATERAL_BIZ"             # 业务单边账 (业务有单未付款，或退款未到账)
     TIMING_LAG = "TIMING_LAG"                     # 跨期在途 (跨月退款/资金在途)
-    LOGISTICS_MISMATCH = "LOGISTICS_MISMATCH"     # 履约异常 (超重扣款/破损重发单据分裂)
+    LOGISTICS_MISMATCH = "LOGISTICS_MISMATCH"     # 履约异常 (超重扣款/破损重发单据分裂/运费险未赔)
 
 
 class DiscrepancyType(str, Enum):
@@ -50,20 +51,32 @@ class DiscrepancyType(str, Enum):
 
 
 @dataclass
+class ReconcileConfig:
+    """对账规则与账期参数配置"""
+    cutoff_date: Optional[str] = "2026-09-30 23:59:59"  # 对账截止日 (Cutoff Date)
+    initial_cash_balance: Decimal = Decimal("50000.00")  # 期初资金余额
+    fee_baseline_rate: Decimal = Decimal("0.006")       # 基准通道费率 (0.6%)
+    commission_jump_threshold: Decimal = Decimal("0.50") # 佣金跳档暗扣容忍阈值 (¥0.50)
+    insurance_claim_standard: Decimal = Decimal("8.00")  # 运费险标准理赔保额 (¥8.00)
+    tolerance: Decimal = Decimal("0.00")                # 抹零容差阈值 (¥0.00)
+
+
+@dataclass
 class OrderRecord:
     """业务订单记录（电商后台 / 订单中心）"""
-    order_id: str                      # 业务主订单号
-    user_id: str                       # 用户标识
-    product_name: str                  # 商品名称
-    goods_amount: Decimal              # 商品标价总额
-    shop_discount: Decimal             # 店铺自主优惠券
-    platform_coupon: Decimal           # 平台跨店满减补贴 (平台事后返还)
-    freight_fee: Decimal               # 运费收取
-    actual_payable: Decimal            # 买家应付金额 = goods_amount - shop_discount - platform_coupon + freight_fee
-    order_status: str                  # 订单状态 (PAID, REFUNDED, SHIPPED, CLOSED)
-    created_at: str                    # 下单时间
-    refund_amount: Decimal = Decimal("0.00")  # 业务记录退款金额
-    refund_time: Optional[str] = None         # 申请退款时间
+    order_id: str                              # 业务主订单号
+    user_id: str                               # 用户标识
+    product_name: str                          # 商品名称
+    goods_amount: Decimal                      # 商品标价总额
+    shop_discount: Decimal                     # 店铺自主优惠券
+    platform_coupon: Decimal                   # 平台跨店满减补贴 (平台事后返还)
+    freight_fee: Decimal                       # 运费收取
+    actual_payable: Decimal                    # 买家应付金额 = goods_amount - shop_discount - platform_coupon + freight_fee
+    order_status: str                          # 订单状态 (PAID, REFUNDED, SHIPPED, CLOSED)
+    created_at: str                            # 下单时间
+    goods_cost: Decimal = Decimal("0.00")       # 商品采购成本 (COGS, 用于计算真实毛利)
+    refund_amount: Decimal = Decimal("0.00")   # 业务记录退款金额
+    refund_time: Optional[str] = None          # 申请退款时间
 
 
 @dataclass
@@ -105,6 +118,11 @@ class DiscrepancyItem:
     logistics_amount: Decimal
     suspect_reason: str
     accounting_advice: str             # 财会老法师的调账分录建议
+    id: Optional[int] = None
+    process_status: str = "PENDING"    # PENDING (待处理), RESOLVED (已调账)
+    resolved_note: Optional[str] = None
+    resolved_by: Optional[str] = None
+    resolved_at: Optional[str] = None
     detected_at: str = field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
 # /* StarOfCAU-END */

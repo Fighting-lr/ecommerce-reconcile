@@ -1,6 +1,6 @@
 """
 电商对账与异常核算系统核心模块
-作者: StarOfCAU (李锐)
+作者: StarOfCAU (StarOfCAU)
 """
 
 from .models import money, OrderRecord, PaymentRecord, LogisticsRecord, ReconcileStatus, DiscrepancyType, DiscrepancyItem

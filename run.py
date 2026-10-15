@@ -2,7 +2,7 @@
 # /* StarOfCAU-BEGIN: Main Execution Entrypoint */
 """
 小微电商多渠道资金对账与年审异常核算系统 - 一键启动入口
-作者: StarOfCAU (李锐)
+作者: StarOfCAU (StarOfCAU)
 特性: 
 1. 支持 CLI 极速对账流水分析与 A4 报告导出
 2. 支持 --web 或 --serve 启动企业级交互式全栈 Web 工作台 (SQLite + Auth + 实时录入)

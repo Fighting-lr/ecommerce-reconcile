@@ -1,7 +1,7 @@
 # /* StarOfCAU-BEGIN: Unit Tests for Database and Authentication */
 """
 数据库持久化、RBAC 用户权限与实时录入单元测试
-作者: StarOfCAU (李锐)
+作者: StarOfCAU (StarOfCAU)
 """
 
 import unittest

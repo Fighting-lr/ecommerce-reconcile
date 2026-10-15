@@ -3,40 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小微电商多渠道资金对账与年审异常核算系统 (StarOfCAU)</title>
+    <title>电商资金对账与年审异常核算工作台 - StarOfCAU</title>
     <style>
         :root {
-            --primary: #0284c7;
-            --primary-dark: #0369a1;
-            --primary-light: #e0f2fe;
-            --success: #10b981;
-            --success-bg: #ecfdf5;
-            --warning: #f59e0b;
-            --warning-bg: #fffbeb;
-            --danger: #ef4444;
-            --danger-bg: #fef2f2;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --primary-light: #eff6ff;
+            --primary-dark: #1e40af;
+            --text-main: #0f172a;
+            --text-sub: #64748b;
             --bg-body: #f8fafc;
             --bg-card: #ffffff;
             --border: #e2e8f0;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --sidebar-w: 260px;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
-            background: var(--bg-body);
-            color: var(--text-main);
-            min-height: 100vh;
-            display: flex;
-        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
+        body { background-color: var(--bg-body); color: var(--text-main); display: flex; min-height: 100vh; }
+
         /* 侧边导航栏 */
         .sidebar {
-            width: 260px;
+            width: var(--sidebar-w);
             background: #0f172a;
-            color: #f8fafc;
+            color: #fff;
             display: flex;
             flex-direction: column;
-            flex-shrink: 0;
             position: fixed;
             top: 0; bottom: 0; left: 0;
             z-index: 50;
@@ -45,115 +39,87 @@
             padding: 24px 20px;
             border-bottom: 1px solid #1e293b;
         }
-        .brand h2 { font-size: 17px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
+        .brand h2 { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; color: #f8fafc; }
         .brand p { font-size: 11px; color: #94a3b8; margin-top: 4px; }
-        .nav-menu { padding: 16px 10px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+        .nav-menu { padding: 16px 10px; flex: 1; overflow-y: auto; }
         .nav-item {
             display: flex; align-items: center; gap: 12px;
-            padding: 12px 14px; border-radius: 8px;
-            color: #94a3b8; font-size: 14px; font-weight: 500;
-            cursor: pointer; transition: all 0.2s;
+            padding: 11px 14px; color: #94a3b8; border-radius: 8px;
+            cursor: pointer; font-size: 13px; font-weight: 500;
+            margin-bottom: 4px; transition: all 0.15s ease;
         }
-        .nav-item:hover { background: #1e293b; color: #f8fafc; }
-        .nav-item.active { background: var(--primary); color: #fff; }
+        .nav-item:hover { color: #fff; background: rgba(255,255,255,0.06); }
+        .nav-item.active { color: #fff; background: var(--primary); font-weight: 600; }
         .user-panel {
             padding: 16px 20px;
             border-top: 1px solid #1e293b;
-            background: #090d16;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            display: flex; align-items: center; justify-content: space-between;
         }
         .user-info { display: flex; align-items: center; gap: 10px; }
-        .avatar {
-            width: 36px; height: 36px; border-radius: 50%;
-            background: var(--primary); color: #fff;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 14px;
-        }
-        .user-meta h4 { font-size: 13px; color: #fff; }
-        .user-meta span { font-size: 11px; color: #38bdf8; background: #0c4a6e; padding: 2px 6px; border-radius: 4px; }
-        .btn-logout { background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 16px; }
-        .btn-logout:hover { color: #ef4444; }
+        .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 14px; }
+        .user-meta h4 { font-size: 13px; color: #f8fafc; }
+        .user-meta span { font-size: 11px; color: #94a3b8; }
+        .btn-logout { background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 16px; padding: 4px; }
+        .btn-logout:hover { color: var(--danger); }
 
         /* 主工作区 */
         .main-content {
-            margin-left: 260px;
+            margin-left: var(--sidebar-w);
             flex: 1;
-            padding: 28px 36px;
-            max-width: 1380px;
+            padding: 24px 32px;
+            max-width: 1440px;
         }
         .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: flex; justify-content: space-between; align-items: center;
             margin-bottom: 24px;
         }
-        .page-title h1 { font-size: 24px; font-weight: 700; color: var(--text-main); }
-        .page-title p { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
-        .actions { display: flex; gap: 12px; }
-
-        /* 统一卡片与网格 */
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-        .kpi-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-        }
-        .kpi-card .label { font-size: 13px; color: var(--text-muted); }
-        .kpi-card .value { font-size: 26px; font-weight: 700; color: var(--text-main); margin: 6px 0 2px; }
-        .kpi-card .sub { font-size: 12px; color: var(--text-muted); }
-
-        .panel {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-        }
-        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
-        .panel-title { font-size: 16px; font-weight: 600; color: var(--text-main); }
+        .page-title h1 { font-size: 22px; font-weight: 700; color: #0f172a; }
+        .page-title p { font-size: 13px; color: var(--text-sub); margin-top: 3px; }
+        .top-bar .actions { display: flex; gap: 10px; align-items: center; }
 
         /* 按钮与徽章 */
         .btn {
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 9px 16px; border-radius: 8px; font-size: 13px;
-            font-weight: 500; cursor: pointer; border: 1px solid transparent;
-            transition: all 0.15s;
+            padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 500;
+            cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+            transition: all 0.15s ease; border: 1px solid transparent; outline: none;
         }
         .btn-primary { background: var(--primary); color: #fff; }
-        .btn-primary:hover { background: var(--primary-dark); }
-        .btn-secondary { background: #fff; border-color: var(--border); color: var(--text-main); }
-        .btn-secondary:hover { background: #f1f5f9; }
-        .btn-success { background: var(--success); color: #fff; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-secondary { background: #fff; border-color: var(--border); color: #334155; }
+        .btn-secondary:hover { background: #f8fafc; border-color: #cbd5e1; }
+        .btn-danger { background: #fef2f2; border-color: #fecaca; color: var(--danger); }
+        .btn-danger:hover { background: #fee2e2; }
+        .btn-success { background: #ecfdf5; border-color: #a7f3d0; color: var(--success); }
+        .btn-sm { padding: 4px 10px; font-size: 12px; }
 
-        .badge {
-            display: inline-block; padding: 4px 8px; border-radius: 6px;
-            font-size: 12px; font-weight: 500;
-        }
-        .badge-success { background: var(--success-bg); color: #047857; }
-        .badge-warning { background: var(--warning-bg); color: #b45309; }
-        .badge-danger { background: var(--danger-bg); color: #b91c1c; }
-        .badge-info { background: var(--primary-light); color: var(--primary-dark); }
+        .badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+        .badge-success { background: #ecfdf5; color: #047857; }
+        .badge-warning { background: #fffbeb; color: #b45309; }
+        .badge-danger { background: #fef2f2; color: #b91c1c; }
+        .badge-info { background: #eff6ff; color: #1d4ed8; }
+
+        /* KPI 指标卡片 */
+        .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 24px; }
+        .kpi-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
+        .kpi-title { font-size: 12px; font-weight: 600; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.5px; }
+        .kpi-value { font-size: 24px; font-weight: 700; margin: 8px 0; color: #0f172a; }
+        .kpi-sub { font-size: 12px; color: var(--text-sub); display: flex; align-items: center; gap: 4px; }
+
+        /* 面板卡片 */
+        .panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 22px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+        .panel-title { font-size: 15px; font-weight: 600; color: #0f172a; display: flex; align-items: center; gap: 8px; }
 
         /* 表格样式 */
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--border); font-size: 13px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+        th, td { padding: 12px 14px; border-bottom: 1px solid var(--border); }
         th { background: #f8fafc; color: #475569; font-weight: 600; }
         tr:hover { background: #fbfcfe; }
 
         /* 表单样式 */
         .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
         .form-section { background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
-        .form-section h3 { font-size: 14px; font-weight: 600; margin-bottom: 14px; color: var(--primary-dark); border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+        .form-section h3 { font-size: 13px; font-weight: 600; margin-bottom: 14px; color: var(--primary-dark); border-bottom: 1px solid var(--border); padding-bottom: 8px; }
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-size: 12px; color: #475569; margin-bottom: 4px; font-weight: 500; }
         .form-group input, .form-group select {
@@ -162,26 +128,41 @@
         }
         .form-group input:focus, .form-group select:focus { border-color: var(--primary); }
 
-        /* 登录弹窗 (全屏遮罩) */
+        /* 模态弹窗 */
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px);
+            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
             display: flex; align-items: center; justify-content: center;
             z-index: 100;
         }
-        .modal {
-            background: #fff; width: 420px; border-radius: 16px;
-            padding: 32px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
-        }
-        .modal-header { text-align: center; margin-bottom: 24px; }
-        .modal-header h2 { font-size: 20px; font-weight: 700; color: #0f172a; }
-        .modal-header p { font-size: 13px; color: #64748b; margin-top: 4px; }
-        .quick-roles { display: flex; gap: 8px; margin-top: 16px; }
+        .modal { background: #fff; width: 440px; border-radius: 14px; padding: 28px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+        .modal-lg { width: 860px; max-height: 85vh; overflow-y: auto; }
+        .modal-header { text-align: center; margin-bottom: 20px; }
+        .modal-header h2 { font-size: 18px; font-weight: 700; color: #0f172a; }
+        .modal-header p { font-size: 12px; color: #64748b; margin-top: 4px; }
+        .quick-roles { display: flex; gap: 8px; margin-top: 14px; }
         .quick-roles button { flex: 1; padding: 6px; font-size: 11px; border: 1px solid var(--border); border-radius: 6px; background: #f8fafc; cursor: pointer; }
         .quick-roles button:hover { background: var(--primary-light); border-color: var(--primary); color: var(--primary-dark); }
 
         .hidden { display: none !important; }
-        .advice-code { font-family: monospace; font-size: 12px; background: #f1f5f9; padding: 6px 10px; border-radius: 4px; color: #0369a1; }
+        .advice-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; background: #f1f5f9; padding: 5px 8px; border-radius: 4px; color: #0369a1; word-break: break-all; }
+        
+        .tab-bar { display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+        .sub-tab { padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; color: #64748b; }
+        .sub-tab.active { background: var(--primary); color: #fff; }
+
+        .pagination { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; font-size: 12px; color: #64748b; }
+        .pagination .controls { display: flex; gap: 6px; }
+
+        /* 打印样式适配 A4 PDF */
+        @media print {
+            body { background: #fff !important; }
+            .sidebar, .top-bar, .actions, .btn, .modal-overlay, .tab-bar, .pagination, th:last-child, td:last-child { display: none !important; }
+            .main-content { margin-left: 0 !important; padding: 0 !important; width: 100% !important; }
+            .panel { border: none !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; }
+            #view-trial_balance { display: block !important; }
+            #view-dashboard, #view-realtime, #view-discrepancies, #view-transactions, #view-audit_logs, #view-config { display: none !important; }
+        }
     </style>
 </head>
 <body>
@@ -205,10 +186,79 @@
             <div style="margin-top: 20px; border-top: 1px solid #f1f5f9; padding-top: 14px;">
                 <label style="font-size: 11px; color: #94a3b8;">一键快速填入测试角色：</label>
                 <div class="quick-roles">
-                    <button onclick="fillRole('auditor', 'auditor123')">🧑‍💼 年审主审(StarOfCAU)</button>
-                    <button onclick="fillRole('operator', 'operator123')">🏪 星澜电商主管</button>
-                    <button onclick="fillRole('admin', 'admin123')">⚙️ 超级管理员</button>
+                    <button onclick="fillRole('auditor', 'auditor123')">🧑‍💼 年审主审(Auditor)</button>
+                    <button onclick="fillRole('operator', 'operator123')">🏪 店长主管(Operator)</button>
+                    <button onclick="fillRole('admin', 'admin123')">⚙️ 超级管理员(Admin)</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 调账处理弹窗 -->
+    <div id="resolveModal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>✍️ 审计差错人工调账处理</h2>
+                <p>记录调账凭证、冲红单号或外部追偿说明</p>
+            </div>
+            <input type="hidden" id="resolveDiscId">
+            <div class="form-group">
+                <label>业务单号</label>
+                <input type="text" id="resolveOrderId" readonly style="background: #f1f5f9; font-family: monospace;">
+            </div>
+            <div class="form-group">
+                <label>建议分录</label>
+                <div id="resolveAdviceText" class="advice-code" style="margin-bottom: 10px;"></div>
+            </div>
+            <div class="form-group">
+                <label>调账说明与会计凭证号 (如: 顺丰退回超重费 ¥6.00, 凭证 SF-202610-09)</label>
+                <input type="text" id="resolveNoteInput" placeholder="输入调账依据与凭证号" value="已核对原始单据并完成账务冲销">
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 16px;">
+                <button class="btn btn-secondary" style="flex: 1; justify-content: center;" onclick="closeResolveModal()">取消</button>
+                <button class="btn btn-primary" style="flex: 1; justify-content: center;" onclick="submitResolve()">确认调账出具凭证</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 三方穿透对比弹窗 (Drill-Down Drawer) -->
+    <div id="drillDownModal" class="modal-overlay hidden">
+        <div class="modal modal-lg">
+            <div class="modal-header" style="text-align: left; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2 id="drillTitle">🔍 订单三方单据穿透审计对比</h2>
+                    <p id="drillSubtitle">并排核验订单中心、支付渠道网关与快递履约原始凭证</p>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="closeDrillDownModal()">✕ 关闭</button>
+            </div>
+            <div id="drillContent">
+                <!-- 动态填充 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- CSV 上传弹窗 -->
+    <div id="uploadCsvModal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>📥 导入三方账单 CSV 文件</h2>
+                <p>支持拖拽或选择千牛/抖店/支付宝/顺丰标准账单</p>
+            </div>
+            <div class="form-group">
+                <label>单据类型</label>
+                <select id="csvFileType">
+                    <option value="orders">业务订单表 (orders.csv)</option>
+                    <option value="payments">支付收单流水表 (payments.csv)</option>
+                    <option value="logistics">物流履约运单表 (logistics.csv)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>选择 CSV 文件</label>
+                <input type="file" id="csvFileInput" accept=".csv">
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 16px;">
+                <button class="btn btn-secondary" style="flex: 1; justify-content: center;" onclick="closeUploadCsvModal()">取消</button>
+                <button class="btn btn-primary" style="flex: 1; justify-content: center;" onclick="submitUploadCsv()">解析并导入数据库</button>
             </div>
         </div>
     </div>
@@ -217,7 +267,7 @@
     <div class="sidebar">
         <div class="brand">
             <h2><span>📦</span> Reconcile Audit</h2>
-            <p>小微电商三方对账与借贷试算系统</p>
+            <p>小微电商三方对账与借贷试算系统 v2.1</p>
         </div>
         <div class="nav-menu">
             <div class="nav-item active" onclick="switchTab('dashboard')">📊 对账大盘</div>
@@ -225,12 +275,14 @@
             <div class="nav-item" onclick="switchTab('discrepancies')">📑 审计差错审核</div>
             <div class="nav-item" onclick="switchTab('transactions')">📜 交易流水明细</div>
             <div class="nav-item" onclick="switchTab('trial_balance')">🏛️ 资金调节平衡表</div>
+            <div class="nav-item" onclick="switchTab('audit_logs')">🔐 操作审计日志</div>
+            <div class="nav-item" onclick="switchTab('config')">⚙️ 对账规则配置</div>
         </div>
         <div class="user-panel">
             <div class="user-info">
-                <div class="avatar" id="userAvatar">锐</div>
+                <div class="avatar" id="userAvatar">S</div>
                 <div class="user-meta">
-                    <h4 id="userFullName">李锐</h4>
+                    <h4 id="userFullName">StarOfCAU</h4>
                     <span id="userRole">审计员</span>
                 </div>
             </div>
@@ -247,58 +299,65 @@
                 <p id="tabDesc">三方交易流水对撞、平账率指标与损益侵蚀监控</p>
             </div>
             <div class="actions">
+                <button class="btn btn-secondary" onclick="openUploadCsvModal()">📥 导入账单 CSV</button>
                 <button class="btn btn-secondary" onclick="triggerBatchGen(300)">⚡ 注入300笔压测脏数据</button>
                 <button class="btn btn-primary" onclick="refreshCurrentTab()">🔄 刷新数据</button>
             </div>
         </div>
 
-        <!-- 页面 1: 仪表盘 -->
+        <!-- 页面 1: 对账大盘 -->
         <div id="view-dashboard">
             <div class="kpi-grid">
                 <div class="kpi-card">
-                    <div class="label">对账总流水规模</div>
-                    <div class="value" id="kpiTotal">0 笔</div>
-                    <div class="sub">三方复合闭环核验</div>
+                    <div class="kpi-title">交易核对总量</div>
+                    <div class="kpi-value" id="kpiTotal">0 笔</div>
+                    <div class="kpi-sub" id="kpiMatched">已自动平账 0 笔</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="label">自动平账率 (Match Rate)</div>
-                    <div class="value" style="color: #10b981;" id="kpiRate">0.0%</div>
-                    <div class="sub" id="kpiMatched">已平账 0 笔</div>
+                    <div class="kpi-title">调账后平账率 (Adjusted)</div>
+                    <div class="kpi-value" id="kpiRate" style="color: var(--primary);">0%</div>
+                    <div class="kpi-sub" id="kpiResolvedText">已调账 0 笔 / 初始平账率 0%</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="label">待查审计差错 (Exceptions)</div>
-                    <div class="value" style="color: #e11d48;" id="kpiDisc">0 笔</div>
-                    <div class="sub">触发审计预警与挂账</div>
+                    <div class="kpi-title">待查审计差错</div>
+                    <div class="kpi-value" id="kpiDisc" style="color: var(--danger);">0 笔</div>
+                    <div class="kpi-sub" id="kpiPendingText">等待会计出具调账凭证</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="label">隐藏利润侵蚀总额</div>
-                    <div class="value" style="color: #f59e0b;" id="kpiLoss">¥0.00</div>
-                    <div class="sub" id="kpiErosion">侵蚀毛利率 0%</div>
+                    <div class="kpi-title">真实经营毛利 (扣成本)</div>
+                    <div class="kpi-value" id="kpiProfit" style="color: var(--success);">¥0.00</div>
+                    <div class="kpi-sub" id="kpiErosion">真实毛利率 0% / 损益侵蚀 ¥0.00</div>
                 </div>
             </div>
 
             <div class="panel">
                 <div class="panel-header">
-                    <div class="panel-title">🏛️ 《资金对账调节平衡表》即时验算状态</div>
-                    <div id="balanceBadge"><span class="badge badge-success">✓ 借贷试算平衡已闭合</span></div>
+                    <div class="panel-title">🏛️ 《资金对账调节平衡表》核心勾稽试算</div>
+                    <div id="balanceBadge"></div>
                 </div>
                 <table>
                     <thead>
                         <tr>
-                            <th>核算项目</th>
-                            <th style="text-align: right;">发生金额</th>
-                            <th>会计解释与准则依据</th>
+                            <th>核算科目类别</th>
+                            <th style="text-align: right;">业务账面金额 (¥)</th>
+                            <th style="text-align: right;">渠道实际入账 (¥)</th>
+                            <th style="text-align: right;">商品采购成本 COGS (¥)</th>
+                            <th style="text-align: right;">通道手续费扣除 (¥)</th>
+                            <th style="text-align: right;">物流快递支出 (¥)</th>
+                            <th style="text-align: right;">真实毛利额 (¥)</th>
+                            <th>经营毛利率</th>
                         </tr>
                     </thead>
-                    <tbody id="trialSummaryBody">
-                        <tr><td>业务订单系统应收净额</td><td style="text-align: right; font-weight: 600;" id="sumBiz">¥0.00</td><td>电商后台主营业务收入扣减退货应收</td></tr>
-                        <tr><td>支付渠道实际入账净额</td><td style="text-align: right; font-weight: 600; color: #0284c7;" id="sumChannel">¥0.00</td><td>支付宝/银行存款实际清算净流水</td></tr>
-                        <tr><td>渠道手续费及暗扣佣金</td><td style="text-align: right; color: #e11d48;" id="sumFees">¥0.00</td><td>销售费用/财务费用（含千六与跳档提点）</td></tr>
-                        <tr><td>仓储物流与超重履约扣费</td><td style="text-align: right; color: #e11d48;" id="sumShipping">¥0.00</td><td>主营业务成本（含运费超重罚款与运费险）</td></tr>
-                        <tr style="background: #f8fafc; font-weight: 700;">
-                            <td>真实经营毛利 (Gross Profit)</td>
-                            <td style="text-align: right; color: #10b981;" id="sumProfit">¥0.00</td>
-                            <td>真实毛利率: <span id="sumMargin">0%</span></td>
+                    <tbody>
+                        <tr>
+                            <td><strong>小微电商全链路汇总</strong></td>
+                            <td style="text-align: right;" id="sumBiz">¥0.00</td>
+                            <td style="text-align: right; color: var(--primary); font-weight: 700;" id="sumChannel">¥0.00</td>
+                            <td style="text-align: right; color: #64748b;" id="sumCogs">¥0.00</td>
+                            <td style="text-align: right; color: #e11d48;" id="sumFees">-¥0.00</td>
+                            <td style="text-align: right; color: #e11d48;" id="sumShipping">-¥0.00</td>
+                            <td style="text-align: right; color: #10b981; font-weight: 700;" id="sumProfit">¥0.00</td>
+                            <td>真实毛利率: <span id="sumMargin" style="font-weight: 700; color: #10b981;">0%</span></td>
                         </tr>
                     </tbody>
                 </table>
@@ -310,11 +369,13 @@
             <div class="panel">
                 <div class="panel-header">
                     <div class="panel-title">✍️ 单笔交易三方联动录入与即时核算引擎</div>
-                    <div>
-                        <button class="btn btn-secondary" onclick="presetForm('normal')">预填正常单</button>
-                        <button class="btn btn-secondary" onclick="presetForm('overweight')">预填超重扣费单</button>
-                        <button class="btn btn-secondary" onclick="presetForm('commission')">预填佣金跳档暗扣</button>
-                        <button class="btn btn-secondary" onclick="presetForm('ins_delay')">预填运费险滞后</button>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        <button class="btn btn-secondary btn-sm" onclick="presetForm('normal')">正常平账单</button>
+                        <button class="btn btn-secondary btn-sm" onclick="presetForm('overweight')">超重扣费单</button>
+                        <button class="btn btn-secondary btn-sm" onclick="presetForm('commission')">佣金跳档暗扣</button>
+                        <button class="btn btn-secondary btn-sm" onclick="presetForm('ins_delay')">运费险滞后未赔</button>
+                        <button class="btn btn-secondary btn-sm" onclick="presetForm('in_transit')">T+1跨期在途结算</button>
+                        <button class="btn btn-secondary btn-sm" onclick="presetForm('cross_refund')">跨期退款冲销</button>
                     </div>
                 </div>
                 <div class="form-grid">
@@ -323,27 +384,56 @@
                         <div class="form-group"><label>业务订单号</label><input type="text" id="in_order_id" value="TB_LIVE_2026101401"></div>
                         <div class="form-group"><label>商品名称</label><input type="text" id="in_product_name" value="法兰绒加厚家居服"></div>
                         <div class="form-group"><label>商品标价总额 (¥)</label><input type="number" step="0.01" id="in_goods_amount" value="89.90" oninput="calcPayable()"></div>
-                        <div class="form-group"><label>店铺优惠 (¥)</label><input type="number" step="0.01" id="in_shop_discount" value="5.00" oninput="calcPayable()"></div>
+                        <div class="form-group"><label>店铺自主优惠 (¥)</label><input type="number" step="0.01" id="in_shop_discount" value="5.00" oninput="calcPayable()"></div>
+                        <div class="form-group"><label>平台满减券补贴 (¥)</label><input type="number" step="0.01" id="in_platform_coupon" value="0.00" oninput="calcPayable()"></div>
+                        <div class="form-group"><label>商品采购成本 COGS (¥)</label><input type="number" step="0.01" id="in_goods_cost" value="32.00"></div>
+                        <div class="form-group"><label>订单状态</label>
+                            <select id="in_order_status">
+                                <option value="PAID">已付款 (PAID)</option>
+                                <option value="SHIPPED">已发货 (SHIPPED)</option>
+                                <option value="REFUNDED">已退款 (REFUNDED)</option>
+                                <option value="CLOSED">已关闭 (CLOSED)</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>退款金额 (¥)</label><input type="number" step="0.01" id="in_refund_amount" value="0.00"></div>
+                        <div class="form-group"><label>退款申请时间 (可选)</label><input type="text" id="in_refund_time" placeholder="2026-10-05 14:00:00"></div>
                         <div class="form-group"><label>买家实付应收 (¥)</label><input type="number" step="0.01" id="in_actual_payable" value="84.90" readonly style="background: #e2e8f0; font-weight: 700;"></div>
                     </div>
                     <div class="form-section">
                         <h3>2. 支付收单流水 (Payments)</h3>
                         <div class="form-group">
                             <label>收单渠道</label>
-                            <select id="in_channel"><option value="ALIPAY">支付宝 (Alipay)</option><option value="WXPAY">微信支付 (WeChat)</option></select>
+                            <select id="in_channel">
+                                <option value="ALIPAY">支付宝 (Alipay)</option>
+                                <option value="WXPAY">微信支付 (WeChat Pay)</option>
+                                <option value="UNIONPAY">银联商务 (UnionPay)</option>
+                            </select>
                         </div>
-                        <div class="form-group"><label>渠道实际扣款金额 (¥)</label><input type="number" step="0.01" id="in_pay_amount" value="84.90"></div>
+                        <div class="form-group"><label>渠道实际入账扣款金额 (¥)</label><input type="number" step="0.01" id="in_pay_amount" value="84.90"></div>
                         <div class="form-group"><label>渠道手续费/平台佣金 (¥)</label><input type="number" step="0.01" id="in_channel_fee" value="0.51"></div>
+                        <div class="form-group"><label>渠道划款时间</label><input type="text" id="in_trans_time" placeholder="留空默认当前时间"></div>
                     </div>
                     <div class="form-section">
                         <h3>3. 仓储物流履约 (Logistics)</h3>
                         <div class="form-group">
                             <label>承运快递商</label>
-                            <select id="in_carrier"><option value="SF">顺丰速运 (SF)</option><option value="ZTO">中通快递</option></select>
+                            <select id="in_carrier">
+                                <option value="SF">顺丰速运 (SF)</option>
+                                <option value="ZTO">中通快递 (ZTO)</option>
+                                <option value="CAINIAO">菜鸟裹裹 (Cainiao)</option>
+                            </select>
                         </div>
                         <div class="form-group"><label>基础运费 (¥)</label><input type="number" step="0.01" id="in_shipping_fee" value="4.50"></div>
                         <div class="form-group"><label>超重补扣费 (¥)</label><input type="number" step="0.01" id="in_overweight_fee" value="0.00"></div>
                         <div class="form-group"><label>运费险保费代扣 (¥)</label><input type="number" step="0.01" id="in_ins_fee" value="0.80"></div>
+                        <div class="form-group"><label>运费险理赔到账金额 (¥)</label><input type="number" step="0.01" id="in_ins_claim" value="0.00"></div>
+                        <div class="form-group"><label>履约状态</label>
+                            <select id="in_delivery_status">
+                                <option value="DELIVERED">正常签收 (DELIVERED)</option>
+                                <option value="RETURNING">买家退货途中 (RETURNING)</option>
+                                <option value="RETURNED">退货已验收入库 (RETURNED)</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div style="margin-top: 20px; text-align: right;">
@@ -366,11 +456,27 @@
             <div class="panel">
                 <div class="panel-header">
                     <div class="panel-title">📑 待调账审计差错清单（审计底稿）</div>
-                    <div>
-                        <button class="btn btn-secondary" onclick="loadDiscrepancies('PENDING')">只看待处理</button>
-                        <button class="btn btn-secondary" onclick="loadDiscrepancies('RESOLVED')">查看已调账</button>
-                        <button class="btn btn-secondary" onclick="loadDiscrepancies('')">全部差错</button>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-secondary btn-sm" onclick="exportDiscrepanciesCsv()">📥 导出底稿 (CSV)</button>
                     </div>
+                </div>
+                <!-- 筛选工具栏 -->
+                <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+                    <input type="text" id="discSearchInput" placeholder="按业务单号搜索..." style="padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; width: 220px;" oninput="loadDiscrepancies()">
+                    <select id="discStatusFilter" style="padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px;" onchange="loadDiscrepancies()">
+                        <option value="">全部处理状态</option>
+                        <option value="PENDING" selected>只看待调账 (PENDING)</option>
+                        <option value="RESOLVED">查看已调账 (RESOLVED)</option>
+                    </select>
+                    <select id="discTypeFilter" style="padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px;" onchange="loadDiscrepancies()">
+                        <option value="">全部差错分类</option>
+                        <option value="在途资金未结算">在途资金未结算</option>
+                        <option value="跨期退款待冲销">跨期退款待冲销</option>
+                        <option value="平台扣点与税费差额">平台扣点与税费差额</option>
+                        <option value="运费险理赔滞后">运费险理赔滞后</option>
+                        <option value="单边挂账（待查短款/长款）">单边挂账（待查短款/长款）</option>
+                        <option value="物流超重异常扣费">物流超重异常扣费</option>
+                    </select>
                 </div>
                 <table>
                     <thead>
@@ -378,9 +484,10 @@
                             <th style="width: 140px;">业务单号</th>
                             <th style="width: 140px;">差错分类</th>
                             <th style="width: 100px; text-align: right;">差异金额</th>
-                            <th>异常排查原因</th>
-                            <th>建议会计分录（财会老法师批注）</th>
-                            <th style="width: 100px; text-align: center;">操作</th>
+                            <th>异常排查依据</th>
+                            <th>建议会计分录（财会法师批注）</th>
+                            <th>调账状态 / 凭证备注</th>
+                            <th style="width: 140px; text-align: center;">操作</th>
                         </tr>
                     </thead>
                     <tbody id="discrepancyTableBody"></tbody>
@@ -392,20 +499,32 @@
         <div id="view-transactions" class="hidden">
             <div class="panel">
                 <div class="panel-header">
-                    <div class="panel-title">📜 数据库持久化流水查询 (Top 50)</div>
+                    <div class="panel-title">📜 数据库持久化原始账单流水查询</div>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="txSearchInput" placeholder="输入单号或名称搜索..." style="padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; width: 220px;" onkeydown="if(event.key==='Enter') loadTransactions(1)">
+                        <button class="btn btn-secondary btn-sm" onclick="loadTransactions(1)">🔍 查询</button>
+                    </div>
                 </div>
+
+                <!-- 三方子视图切换 -->
+                <div class="tab-bar">
+                    <div class="sub-tab active" id="subtab-orders" onclick="switchTxTab('orders')">📦 业务订单 (Orders)</div>
+                    <div class="sub-tab" id="subtab-payments" onclick="switchTxTab('payments')">💳 支付收单流水 (Payments)</div>
+                    <div class="sub-tab" id="subtab-logistics" onclick="switchTxTab('logistics')">🚚 物流履约账单 (Logistics)</div>
+                </div>
+
                 <table>
-                    <thead>
-                        <tr>
-                            <th>单号 / 流水号</th>
-                            <th>交易主体 / 商品</th>
-                            <th style="text-align: right;">金额</th>
-                            <th>渠道 / 快递</th>
-                            <th>交易时间</th>
-                        </tr>
-                    </thead>
+                    <thead id="txTableHead"></thead>
                     <tbody id="transactionsTableBody"></tbody>
                 </table>
+
+                <div class="pagination">
+                    <div id="txPageInfo">显示第 1 页</div>
+                    <div class="controls">
+                        <button class="btn btn-secondary btn-sm" id="btnPrevPage" onclick="changeTxPage(-1)">上一页</button>
+                        <button class="btn btn-secondary btn-sm" id="btnNextPage" onclick="changeTxPage(1)">下一页</button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -419,11 +538,73 @@
                 <div id="trialBalanceContent"></div>
             </div>
         </div>
+
+        <!-- 页面 6: 操作审计日志 -->
+        <div id="view-audit_logs" class="hidden">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">🔐 系统操作安全审计日志 (Audit Trails)</div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 80px;">日志ID</th>
+                            <th style="width: 140px;">操作人</th>
+                            <th style="width: 180px;">操作类型</th>
+                            <th>详细操作说明</th>
+                            <th style="width: 180px;">操作时间</th>
+                        </tr>
+                    </thead>
+                    <tbody id="auditLogsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 页面 7: 对账规则配置 -->
+        <div id="view-config" class="hidden">
+            <div class="panel" style="max-width: 700px;">
+                <div class="panel-header">
+                    <div class="panel-title">⚙️ 电商资金对账规则与账期参数设置</div>
+                </div>
+                <div class="form-group">
+                    <label>对账截止日 (Cutoff Date - 区分当期与跨期结算)</label>
+                    <input type="text" id="cfg_cutoff" placeholder="2026-09-30 23:59:59">
+                </div>
+                <div class="form-group">
+                    <label>期初银行资金余额 (¥)</label>
+                    <input type="number" step="0.01" id="cfg_initial_cash">
+                </div>
+                <div class="form-group">
+                    <label>基准支付通道费率 (如 0.006 代表千分之六)</label>
+                    <input type="number" step="0.001" id="cfg_fee_rate">
+                </div>
+                <div class="form-group">
+                    <label>平台佣金跳档暗扣容忍阈值 (¥)</label>
+                    <input type="number" step="0.01" id="cfg_jump_threshold">
+                </div>
+                <div class="form-group">
+                    <label>运费险标准理赔保额 (¥)</label>
+                    <input type="number" step="0.01" id="cfg_ins_standard">
+                </div>
+                <div class="form-group">
+                    <label>对账抹零容差 (¥, 默认 0.00 严格对齐)</label>
+                    <input type="number" step="0.01" id="cfg_tolerance">
+                </div>
+                <div style="margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="saveReconcileConfig()">💾 保存参数并重新执行对账验算</button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script>
         let currentToken = localStorage.getItem("token") || "";
         let currentUser = null;
+        let activeTab = "dashboard";
+        let currentTxTab = "orders";
+        let currentTxPage = 1;
+        let totalTxPages = 1;
 
         // 初始化
         window.onload = function() {
@@ -486,7 +667,7 @@
             if(!currentUser) return;
             document.getElementById("userFullName").innerText = currentUser.full_name;
             document.getElementById("userAvatar").innerText = currentUser.full_name.charAt(0);
-            document.getElementById("userRole").innerText = currentUser.role;
+            document.getElementById("userRole").innerText = currentUser.role.toUpperCase();
         }
 
         async function handleLogout() {
@@ -496,28 +677,54 @@
             showLoginModal();
         }
 
-        // 选项卡切换
+        // 选项卡切换与标题联动
         function switchTab(tab) {
-            const views = ["dashboard", "realtime", "discrepancies", "transactions", "trial_balance"];
+            activeTab = tab;
+            const views = ["dashboard", "realtime", "discrepancies", "transactions", "trial_balance", "audit_logs", "config"];
             views.forEach(v => {
-                document.getElementById(`view-${v}`).classList.add("hidden");
+                const el = document.getElementById(`view-${v}`);
+                if(el) el.classList.add("hidden");
             });
             document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
 
-            document.getElementById(`view-${tab}`).classList.remove("hidden");
-            event.currentTarget.classList.add("active");
+            const targetView = document.getElementById(`view-${tab}`);
+            if(targetView) targetView.classList.remove("hidden");
+            if(event && event.currentTarget) event.currentTarget.classList.add("active");
+
+            const tabMeta = {
+                "dashboard": ["📊 经营对账大盘", "三方交易流水对撞、平账率指标与损益侵蚀监控"],
+                "realtime": ["✍️ 实时单据录入", "模拟单笔业务订单、收单流水与物流运单即时对账判定"],
+                "discrepancies": ["📑 审计差错审核", "对账差异清单排查、会计分录建议、凭证号录入与状态留痕"],
+                "transactions": ["📜 交易流水明细", "业务订单、支付渠道、物流履约三方原始账单明细查询"],
+                "trial_balance": ["🏛️ 资金调节平衡表", "企业会计准则复式试算平衡与期末银行存款调节"],
+                "audit_logs": ["🔐 操作审计日志", "系统安全、RBAC 角色鉴权拦截与业务操作流水审计记录"],
+                "config": ["⚙️ 对账规则配置", "账期截止日、基准手续费率、佣金跳档容差与理赔标准参数"]
+            };
+
+            if(tabMeta[tab]) {
+                document.getElementById("tabTitle").innerText = tabMeta[tab][0];
+                document.getElementById("tabDesc").innerText = tabMeta[tab][1];
+            }
 
             if(tab === "dashboard") loadDashboard();
             if(tab === "discrepancies") loadDiscrepancies();
-            if(tab === "transactions") loadTransactions();
+            if(tab === "transactions") loadTransactions(1);
             if(tab === "trial_balance") loadTrialBalance();
+            if(tab === "audit_logs") loadAuditLogs();
+            if(tab === "config") loadConfig();
         }
 
         function refreshCurrentTab() {
-            loadDashboard();
+            if(activeTab === "dashboard") loadDashboard();
+            else if(activeTab === "discrepancies") loadDiscrepancies();
+            else if(activeTab === "transactions") loadTransactions(currentTxPage);
+            else if(activeTab === "trial_balance") loadTrialBalance();
+            else if(activeTab === "audit_logs") loadAuditLogs();
+            else if(activeTab === "config") loadConfig();
+            else loadDashboard();
         }
 
-        // 1. 加载大盘
+        // 1. 加载大盘数据
         async function loadDashboard() {
             const res = await fetch("/api/dashboard", { headers: { "X-Session-Token": currentToken } });
             const json = await res.json();
@@ -527,16 +734,20 @@
             const bal = json.data.balance;
 
             document.getElementById("kpiTotal").innerText = `${sum.total_orders} 笔`;
-            document.getElementById("kpiRate").innerText = `${sum.matched_rate}%`;
+            document.getElementById("kpiRate").innerText = `${sum.adjusted_match_rate}%`;
             document.getElementById("kpiMatched").innerText = `已自动平账 ${sum.matched_count} 笔`;
-            document.getElementById("kpiDisc").innerText = `${sum.discrepancy_count} 笔`;
-            document.getElementById("kpiLoss").innerText = `¥${bal.total_hidden_loss}`;
-            document.getElementById("kpiErosion").innerText = `侵蚀毛利率 ${bal.erosion_rate}%`;
+            document.getElementById("kpiResolvedText").innerText = `已调账 ${sum.resolved_discrepancies} 笔 / 初始平账率 ${sum.matched_rate}%`;
+            document.getElementById("kpiDisc").innerText = `${sum.pending_discrepancies} 笔`;
+            document.getElementById("kpiPendingText").innerText = `已调账 ${sum.resolved_discrepancies} 笔 / 总差错 ${sum.discrepancy_count} 笔`;
+            
+            document.getElementById("kpiProfit").innerText = `¥${bal.gross_profit}`;
+            document.getElementById("kpiErosion").innerText = `真实毛利率 ${bal.actual_profit_margin}% / 损益侵蚀 ¥${bal.total_hidden_loss}`;
 
             document.getElementById("sumBiz").innerText = `¥${sum.total_biz_turnover}`;
             document.getElementById("sumChannel").innerText = `¥${sum.total_channel_turnover}`;
-            document.getElementById("sumFees").innerText = `¥${sum.total_channel_fees}`;
-            document.getElementById("sumShipping").innerText = `¥${sum.total_shipping_costs}`;
+            document.getElementById("sumCogs").innerText = `¥${sum.total_cogs || '0.00'}`;
+            document.getElementById("sumFees").innerText = `-¥${sum.total_channel_fees}`;
+            document.getElementById("sumShipping").innerText = `-¥${sum.total_shipping_costs}`;
             document.getElementById("sumProfit").innerText = `¥${bal.gross_profit}`;
             document.getElementById("sumMargin").innerText = `${bal.actual_profit_margin}%`;
 
@@ -548,11 +759,12 @@
             }
         }
 
-        // 2. 实时单据录入
+        // 2. 实时单据录入与即时判定
         function calcPayable() {
             const g = parseFloat(document.getElementById("in_goods_amount").value) || 0;
             const d = parseFloat(document.getElementById("in_shop_discount").value) || 0;
-            const p = Math.max(0, g - d);
+            const c = parseFloat(document.getElementById("in_platform_coupon").value) || 0;
+            const p = Math.max(0, g - d - c);
             document.getElementById("in_actual_payable").value = p.toFixed(2);
             document.getElementById("in_pay_amount").value = p.toFixed(2);
             document.getElementById("in_channel_fee").value = (p * 0.006).toFixed(2);
@@ -560,17 +772,42 @@
 
         function presetForm(type) {
             document.getElementById("in_order_id").value = `TB_LIVE_${Date.now().toString().slice(-6)}`;
+            document.getElementById("in_goods_amount").value = "89.90";
+            document.getElementById("in_shop_discount").value = "5.00";
+            document.getElementById("in_platform_coupon").value = "0.00";
+            document.getElementById("in_goods_cost").value = "32.00";
+            document.getElementById("in_order_status").value = "PAID";
+            document.getElementById("in_refund_amount").value = "0.00";
+            document.getElementById("in_refund_time").value = "";
+            document.getElementById("in_trans_time").value = "";
+            document.getElementById("in_delivery_status").value = "DELIVERED";
+            document.getElementById("in_shipping_fee").value = "4.50";
+            document.getElementById("in_overweight_fee").value = "0.00";
+            document.getElementById("in_ins_fee").value = "0.80";
+            document.getElementById("in_ins_claim").value = "0.00";
             calcPayable();
 
             if(type === 'normal') {
-                document.getElementById("in_overweight_fee").value = "0.00";
-                document.getElementById("in_channel_fee").value = (parseFloat(document.getElementById("in_actual_payable").value) * 0.006).toFixed(2);
+                // 完全正常平账
             } else if(type === 'overweight') {
                 document.getElementById("in_overweight_fee").value = "6.00";
             } else if(type === 'commission') {
                 document.getElementById("in_channel_fee").value = (parseFloat(document.getElementById("in_actual_payable").value) * 0.05).toFixed(2);
             } else if(type === 'ins_delay') {
-                document.getElementById("in_shipping_fee").value = "4.50";
+                // 运费险滞后：已退货，保费代扣0.8元，理赔0元未到账
+                document.getElementById("in_order_status").value = "REFUNDED";
+                document.getElementById("in_refund_amount").value = document.getElementById("in_actual_payable").value;
+                document.getElementById("in_delivery_status").value = "RETURNED";
+                document.getElementById("in_ins_fee").value = "0.80";
+                document.getElementById("in_ins_claim").value = "0.00";
+            } else if(type === 'in_transit') {
+                // T+1 在途结算：支付时间设在对账截止日之后 (2026-10-01)
+                document.getElementById("in_trans_time").value = "2026-10-01 10:15:00";
+            } else if(type === 'cross_refund') {
+                // 跨期退款：9月已收款，10月退货冲红
+                document.getElementById("in_order_status").value = "REFUNDED";
+                document.getElementById("in_refund_amount").value = document.getElementById("in_actual_payable").value;
+                document.getElementById("in_refund_time").value = "2026-10-05 14:00:00";
             }
         }
 
@@ -580,15 +817,21 @@
                 product_name: document.getElementById("in_product_name").value,
                 goods_amount: document.getElementById("in_goods_amount").value,
                 shop_discount: document.getElementById("in_shop_discount").value,
-                platform_coupon: "0.00",
-                freight_fee: "0.00",
+                platform_coupon: document.getElementById("in_platform_coupon").value,
+                goods_cost: document.getElementById("in_goods_cost").value,
+                order_status: document.getElementById("in_order_status").value,
+                refund_amount: document.getElementById("in_refund_amount").value,
+                refund_time: document.getElementById("in_refund_time").value.trim() || null,
                 channel: document.getElementById("in_channel").value,
                 pay_amount: document.getElementById("in_pay_amount").value,
                 channel_fee: document.getElementById("in_channel_fee").value,
+                trans_time: document.getElementById("in_trans_time").value.trim() || null,
                 carrier: document.getElementById("in_carrier").value,
                 shipping_fee: document.getElementById("in_shipping_fee").value,
                 overweight_fee: document.getElementById("in_overweight_fee").value,
                 freight_insurance_fee: document.getElementById("in_ins_fee").value,
+                insurance_claim_amount: document.getElementById("in_ins_claim").value,
+                delivery_status: document.getElementById("in_delivery_status").value,
             };
 
             const res = await fetch("/api/submit-single", {
@@ -622,96 +865,371 @@
         }
 
         // 3. 差错审计列表
-        async function loadDiscrepancies(status = "") {
-            const url = status ? `/api/discrepancies?status=${status}` : `/api/discrepancies`;
+        async function loadDiscrepancies() {
+            const status = document.getElementById("discStatusFilter").value;
+            const type = document.getElementById("discTypeFilter").value;
+            const kw = document.getElementById("discSearchInput").value.trim();
+
+            let url = `/api/discrepancies?`;
+            if(status) url += `status=${encodeURIComponent(status)}&`;
+            if(type) url += `type=${encodeURIComponent(type)}&`;
+            if(kw) url += `search=${encodeURIComponent(kw)}&`;
+
             const res = await fetch(url, { headers: { "X-Session-Token": currentToken } });
             const data = await res.json();
             const tbody = document.getElementById("discrepancyTableBody");
             tbody.innerHTML = "";
 
-            data.data.forEach((d, idx) => {
+            if(data.data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #94a3b8; padding: 30px;">暂无符合条件的审计差错</td></tr>`;
+                return;
+            }
+
+            data.data.forEach(d => {
                 const tr = document.createElement("tr");
                 const isResolved = d.process_status === 'RESOLVED';
                 tr.innerHTML = `
-                    <td><code>${d.order_id}</code></td>
+                    <td><a href="javascript:void(0)" style="color: var(--primary); font-family: monospace; font-weight: 600; text-decoration: none;" onclick="openDrillDown('${d.order_id}')">${d.order_id} 🔍</a></td>
                     <td><span class="badge ${d.reconcile_status.includes('UNILATERAL') ? 'badge-danger' : 'badge-warning'}">${d.discrepancy_type}</span></td>
                     <td style="text-align: right; font-weight: 600; color: #e11d48;">¥${d.diff_amount}</td>
                     <td style="font-size: 12px; color: #475569;">${d.suspect_reason}</td>
                     <td style="font-size: 12px;"><span class="advice-code">${d.accounting_advice}</span></td>
+                    <td style="font-size: 12px;">
+                        ${isResolved ? `<span style="color: #10b981; font-weight: 600;">✓ 已调账</span><br><span style="color: #64748b; font-size: 11px;">${d.resolved_note || ''} (${d.resolved_by || ''})</span>` : '<span style="color: #e11d48;">⏳ 待调账</span>'}
+                    </td>
                     <td style="text-align: center;">
-                        ${isResolved ? '<span style="color: #10b981; font-size: 12px;">✓ 已调账</span>' : `<button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="resolveDiscrepancy(${d.id})">标为已调账</button>`}
+                        <div style="display: flex; gap: 4px; justify-content: center;">
+                            ${isResolved ? 
+                                `<button class="btn btn-secondary btn-sm" onclick="unresolveDiscrepancy(${d.id})">撤销</button>` : 
+                                `<button class="btn btn-primary btn-sm" onclick="openResolveModal(${d.id}, '${d.order_id}', '${escape(d.accounting_advice)}')">调账</button>`
+                            }
+                            <button class="btn btn-secondary btn-sm" onclick="openDrillDown('${d.order_id}')">穿透</button>
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        async function resolveDiscrepancy(id) {
-            await fetch("/api/discrepancy/resolve", {
+        function exportDiscrepanciesCsv() {
+            window.location.href = `/api/discrepancies/export`;
+        }
+
+        function openResolveModal(id, orderId, adviceEscaped) {
+            document.getElementById("resolveDiscId").value = id;
+            document.getElementById("resolveOrderId").value = orderId;
+            document.getElementById("resolveAdviceText").innerText = unescape(adviceEscaped);
+            document.getElementById("resolveModal").classList.remove("hidden");
+        }
+
+        function closeResolveModal() {
+            document.getElementById("resolveModal").classList.add("hidden");
+        }
+
+        async function submitResolve() {
+            const id = document.getElementById("resolveDiscId").value;
+            const note = document.getElementById("resolveNoteInput").value.trim();
+            const res = await fetch("/api/discrepancy/resolve", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "X-Session-Token": currentToken },
+                body: JSON.stringify({ id: id, note: note })
+            });
+            const data = await res.json();
+            if(data.code === 0) {
+                closeResolveModal();
+                loadDiscrepancies();
+            } else {
+                alert(data.msg);
+            }
+        }
+
+        async function unresolveDiscrepancy(id) {
+            if(!confirm("确认撤销该差错的已调账状态？")) return;
+            const res = await fetch("/api/discrepancy/unresolve", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "X-Session-Token": currentToken },
                 body: JSON.stringify({ id: id })
             });
-            loadDiscrepancies();
-        }
-
-        // 4. 交易流水
-        async function loadTransactions() {
-            const res = await fetch("/api/transactions?limit=30", { headers: { "X-Session-Token": currentToken } });
             const data = await res.json();
-            const tbody = document.getElementById("transactionsTableBody");
-            tbody.innerHTML = "";
-
-            data.data.orders.forEach(o => {
-                const tr = document.createElement("tr");
-                tr.innerHTML = `
-                    <td><code>${o.order_id}</code></td>
-                    <td>${o.product_name}</td>
-                    <td style="text-align: right; font-weight: 600;">¥${o.actual_payable}</td>
-                    <td><span class="badge badge-info">订单中心</span></td>
-                    <td>${o.created_at}</td>
-                `;
-                tbody.appendChild(tr);
-            });
+            if(data.code === 0) loadDiscrepancies();
+            else alert(data.msg);
         }
 
-        // 5. 资金调节平衡表
+        // 4. 三方穿透对比抽屉 (Drill-Down)
+        async function openDrillDown(orderId) {
+            const res = await fetch(`/api/discrepancy/drill-down?order_id=${encodeURIComponent(orderId)}`, {
+                headers: { "X-Session-Token": currentToken }
+            });
+            const json = await res.json();
+            if(json.code !== 0) return alert(json.msg);
+
+            const d = json.data;
+            document.getElementById("drillTitle").innerText = `🔍 订单穿透审计: ${orderId}`;
+            
+            let html = `
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 14px;">
+                    <!-- 业务订单 -->
+                    <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 14px;">
+                        <h4 style="font-size: 13px; color: var(--primary-dark); margin-bottom: 10px;">📦 业务订单中心 (Orders)</h4>
+                        ${d.order ? `
+                            <p style="font-size: 12px; margin-bottom: 4px;"><strong>商品名称:</strong> ${d.order.product_name}</p>
+                            <p style="font-size: 12px; margin-bottom: 4px;"><strong>商品标价:</strong> ¥${d.order.goods_amount}</p>
+                            <p style="font-size: 12px; margin-bottom: 4px;"><strong>店铺优惠:</strong> -¥${d.order.shop_discount}</p>
+                            <p style="font-size: 12px; margin-bottom: 4px;"><strong>平台跨店券:</strong> -¥${d.order.platform_coupon}</p>
+                            <p style="font-size: 12px; margin-bottom: 4px;"><strong>商品采购成本:</strong> ¥${d.order.goods_cost || '0.00'}</p>
+                            <p style="font-size: 12px; margin-bottom: 4px;"><strong>买家实付应收:</strong> <span style="font-weight: 700; color: var(--primary);">¥${d.order.actual_payable}</span></p>
+                            <p style="font-size: 12px; margin-bottom: 4px;"><strong>订单状态:</strong> <span class="badge badge-info">${d.order.order_status}</span></p>
+                            <p style="font-size: 12px; margin-bottom: 4px;"><strong>退款金额:</strong> ¥${d.order.refund_amount}</p>
+                            <p style="font-size: 11px; color: #64748b;">下单时间: ${d.order.created_at}</p>
+                        ` : '<p style="color: #e11d48; font-size: 12px;">⚠️ 业务订单中心未查到该单据（渠道单边长款）</p>'}
+                    </div>
+
+                    <!-- 支付渠道 -->
+                    <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 14px;">
+                        <h4 style="font-size: 13px; color: var(--primary-dark); margin-bottom: 10px;">💳 支付网关收单流水 (Payments)</h4>
+                        ${d.payments.length > 0 ? d.payments.map(p => `
+                            <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 8px;">
+                                <p style="font-size: 11px; font-family: monospace; color: #64748b;">${p.pay_flow_id}</p>
+                                <p style="font-size: 12px;"><strong>${p.channel} ${p.trans_type}:</strong> <span style="font-weight: 700; color: ${p.trans_amount < 0 ? '#e11d48' : '#047857'}">¥${p.trans_amount}</span></p>
+                                <p style="font-size: 11px; color: #64748b;">手续费: ¥${p.channel_fee} | 状态: ${p.channel_status}</p>
+                                <p style="font-size: 11px; color: #64748b;">入账时间: ${p.trans_time}</p>
+                            </div>
+                        `).join("") : '<p style="color: #e11d48; font-size: 12px;">⚠️ 支付网关无对应扣款流水（业务单边短款）</p>'}
+                    </div>
+
+                    <!-- 物流履约 -->
+                    <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 14px;">
+                        <h4 style="font-size: 13px; color: var(--primary-dark); margin-bottom: 10px;">🚚 物流仓储与运费险 (Logistics)</h4>
+                        ${d.logistics.length > 0 ? d.logistics.map(l => `
+                            <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 8px;">
+                                <p style="font-size: 11px; font-family: monospace; color: #64748b;">${l.carrier} ${l.tracking_no}</p>
+                                <p style="font-size: 12px;">运费: ¥${l.shipping_fee} | 超重: ¥${l.overweight_fee}</p>
+                                <p style="font-size: 12px;">运费险保费: ¥${l.freight_insurance_fee} | 理赔到账: ¥${l.insurance_claim_amount}</p>
+                                <p style="font-size: 11px; color: #64748b;">履约状态: <span class="badge badge-info">${l.delivery_status}</span></p>
+                                <p style="font-size: 11px; color: #64748b;">发货时间: ${l.ship_time}</p>
+                            </div>
+                        `).join("") : '<p style="color: #64748b; font-size: 12px;">暂无物流履约运单记录</p>'}
+                    </div>
+                </div>
+
+                <!-- 差错审计详情 -->
+                <div style="margin-top: 16px; padding: 14px; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 8px;">
+                    <h4 style="font-size: 13px; color: #b91c1c; margin-bottom: 6px;">📑 审计差异诊断与建议调账分录</h4>
+                    ${d.discrepancies.length > 0 ? d.discrepancies.map(disc => `
+                        <p style="font-size: 13px; color: #334155; margin-bottom: 4px;"><strong>[${disc.discrepancy_type}]</strong> 差异金额: <span style="font-weight: 700; color: #b91c1c;">¥${disc.diff_amount}</span></p>
+                        <p style="font-size: 12px; color: #475569; margin-bottom: 4px;"><strong>原因排查:</strong> ${disc.suspect_reason}</p>
+                        <p style="font-size: 12px; color: #0369a1;"><strong>建议会计分录:</strong> <span class="advice-code">${disc.accounting_advice}</span></p>
+                    `).join("<hr style='margin: 8px 0; border: none; border-top: 1px solid #fecdd3;'>") : '<p style="color: #047857; font-size: 12px;">✓ 该订单三方单据完全吻合，已平账归档。</p>'}
+                </div>
+            `;
+
+            document.getElementById("drillContent").innerHTML = html;
+            document.getElementById("drillDownModal").classList.remove("hidden");
+        }
+
+        function closeDrillDownModal() {
+            document.getElementById("drillDownModal").classList.add("hidden");
+        }
+
+        // 5. 交易流水明细 (三方视图与分页)
+        function switchTxTab(t) {
+            currentTxTab = t;
+            ["orders", "payments", "logistics"].forEach(tab => {
+                document.getElementById(`subtab-${tab}`).classList.remove("active");
+            });
+            document.getElementById(`subtab-${t}`).classList.add("active");
+            loadTransactions(1);
+        }
+
+        async function loadTransactions(page = 1) {
+            currentTxPage = page;
+            const kw = document.getElementById("txSearchInput").value.trim();
+            const limit = 20;
+
+            const res = await fetch(`/api/transactions?tab=${currentTxTab}&page=${page}&limit=${limit}&search=${encodeURIComponent(kw)}`, {
+                headers: { "X-Session-Token": currentToken }
+            });
+            const data = await res.json();
+            if(data.code !== 0) return;
+
+            const head = document.getElementById("txTableHead");
+            const body = document.getElementById("transactionsTableBody");
+            body.innerHTML = "";
+
+            totalTxPages = Math.ceil(data.data.total / limit) || 1;
+            document.getElementById("txPageInfo").innerText = `共 ${data.data.total} 条，当前第 ${currentTxPage} / ${totalTxPages} 页`;
+            document.getElementById("btnPrevPage").disabled = (currentTxPage <= 1);
+            document.getElementById("btnNextPage").disabled = (currentTxPage >= totalTxPages);
+
+            if(currentTxTab === "orders") {
+                head.innerHTML = `<tr><th>订单号</th><th>商品名称</th><th style="text-align: right;">应收金额</th><th style="text-align: right;">采购成本</th><th>状态</th><th>下单时间</th></tr>`;
+                data.data.items.forEach(o => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td><a href="javascript:void(0)" onclick="openDrillDown('${o.order_id}')" style="font-family: monospace; color: var(--primary);">${o.order_id}</a></td>
+                        <td>${o.product_name}</td>
+                        <td style="text-align: right; font-weight: 600;">¥${o.actual_payable}</td>
+                        <td style="text-align: right; color: #64748b;">¥${o.goods_cost || '0.00'}</td>
+                        <td><span class="badge badge-info">${o.order_status}</span></td>
+                        <td>${o.created_at}</td>
+                    `;
+                    body.appendChild(tr);
+                });
+            } else if(currentTxTab === "payments") {
+                head.innerHTML = `<tr><th>网关流水号</th><th>关联订单</th><th>渠道</th><th>交易类型</th><th style="text-align: right;">结算金额</th><th style="text-align: right;">手续费</th><th>入账时间</th></tr>`;
+                data.data.items.forEach(p => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td style="font-family: monospace;">${p.pay_flow_id}</td>
+                        <td><a href="javascript:void(0)" onclick="openDrillDown('${p.order_id}')" style="font-family: monospace; color: var(--primary);">${p.order_id}</a></td>
+                        <td>${p.channel}</td>
+                        <td><span class="badge ${p.trans_type==='PAY'?'badge-success':'badge-warning'}">${p.trans_type}</span></td>
+                        <td style="text-align: right; font-weight: 600; color: ${p.trans_amount < 0 ? '#e11d48' : '#047857'};">¥${p.trans_amount}</td>
+                        <td style="text-align: right;">¥${p.channel_fee}</td>
+                        <td>${p.trans_time}</td>
+                    `;
+                    body.appendChild(tr);
+                });
+            } else { // logistics
+                head.innerHTML = `<tr><th>运单号</th><th>关联订单</th><th>承运商</th><th style="text-align: right;">运费</th><th style="text-align: right;">超重费</th><th style="text-align: right;">险保费</th><th style="text-align: right;">理赔到账</th><th>履约状态</th><th>发货时间</th></tr>`;
+                data.data.items.forEach(l => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td style="font-family: monospace;">${l.tracking_no}</td>
+                        <td><a href="javascript:void(0)" onclick="openDrillDown('${l.order_id}')" style="font-family: monospace; color: var(--primary);">${l.order_id}</a></td>
+                        <td>${l.carrier}</td>
+                        <td style="text-align: right;">¥${l.shipping_fee}</td>
+                        <td style="text-align: right; color: ${l.overweight_fee > 0 ? '#e11d48' : '#475569'};">¥${l.overweight_fee}</td>
+                        <td style="text-align: right;">¥${l.freight_insurance_fee}</td>
+                        <td style="text-align: right; color: #047857;">¥${l.insurance_claim_amount}</td>
+                        <td><span class="badge badge-info">${l.delivery_status}</span></td>
+                        <td>${l.ship_time}</td>
+                    `;
+                    body.appendChild(tr);
+                });
+            }
+        }
+
+        function changeTxPage(delta) {
+            const newP = currentTxPage + delta;
+            if(newP >= 1 && newP <= totalTxPages) loadTransactions(newP);
+        }
+
+        // 6. 资金调节平衡表渲染
         async function loadTrialBalance() {
             const res = await fetch("/api/dashboard", { headers: { "X-Session-Token": currentToken } });
             const json = await res.json();
             const bal = json.data.balance;
             const sum = json.data.summary;
+            const rows = bal.reconcile_rows || [];
+
+            let rowsHtml = rows.map((r, i) => `
+                <tr style="${i===0||i===6||i===7 ? 'font-weight: 700; background: #f8fafc;' : ''}">
+                    <td>${r.item}</td>
+                    <td style="text-align: right; font-family: monospace; font-size: 14px; color: ${r.amount.startsWith('+') ? '#0284c7' : r.amount.startsWith('-') ? '#e11d48' : '#0f172a'};">${r.amount}</td>
+                    <td style="font-size: 12px; color: #64748b;">${r.note}</td>
+                </tr>
+            `).join("");
 
             document.getElementById("trialBalanceContent").innerHTML = `
                 <div style="line-height: 1.8; font-size: 14px;">
                     <p><strong>核算主体</strong>: 星澜商贸 (示例电商主营业务)</p>
                     <p><strong>编制依据</strong>: 中华人民共和国《企业会计准则第 14 号——收入》及借贷复式记账法</p>
-                    <p><strong>调节日</strong>: 2026年9月30日（对账截止日）</p>
+                    <p><strong>对账截止日</strong>: ${json.data.config.cutoff_date || '未设置 (全量核算)'}</p>
                     <hr style="border: none; border-top: 1px solid var(--border); margin: 16px 0;">
                     <table>
-                        <thead><tr><th>会计调节项目</th><th style="text-align: right;">借方 / 贷方净额 (¥)</th><th>说明</th></tr></thead>
-                        <tbody>
-                            <tr><td>一、业务系统账面应收净额</td><td style="text-align: right; font-weight: 700;">¥${sum.total_biz_turnover}</td><td>主营业务收入基线</td></tr>
-                            <tr><td>加：渠道单边已入账（企业未入账款项）</td><td style="text-align: right; color: #0284c7;">¥${bal.type_summary["单边挂账（待查短款/长款）"] || '0.00'}</td><td>其他应付款-待查长款</td></tr>
-                            <tr><td>减：跨期退货退款冲红</td><td style="text-align: right; color: #e11d48;">-¥${bal.type_summary["跨期退款待冲销"] || '0.00'}</td><td>冲减当期主营业务收入</td></tr>
-                            <tr><td>加/减：优惠券分摊与佣金尾差</td><td style="text-align: right;">¥${bal.type_summary["平台扣点与税费差额"] || '0.00'}</td><td>财务费用-结算尾差</td></tr>
-                            <tr style="background: #f8fafc; font-weight: 700;">
-                                <td>二、调节后银行及渠道实际到账金额</td>
-                                <td style="text-align: right; color: #10b981;">¥${sum.total_channel_turnover}</td>
-                                <td>与收单对账单完全相等</td>
-                            </tr>
-                        </tbody>
+                        <thead><tr><th>会计调节项目</th><th style="text-align: right; width: 160px;">借方 / 贷方净额 (¥)</th><th>说明</th></tr></thead>
+                        <tbody>${rowsHtml}</tbody>
                     </table>
-                    <div style="margin-top: 20px; padding: 14px; background: #ecfdf5; border-radius: 8px; color: #047857;">
+                    <div style="margin-top: 20px; padding: 14px; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; color: #047857;">
                         <strong>审计结论：</strong> 经复式验算，期末未解释差异为 <strong>¥${bal.unexplained_diff}</strong>。符合试算平衡准则，所有单边与时间性差异均已查明并出具调账分录。
                     </div>
                 </div>
             `;
         }
 
+        // 7. 操作审计日志
+        async function loadAuditLogs() {
+            const res = await fetch("/api/audit-logs", { headers: { "X-Session-Token": currentToken } });
+            const data = await res.json();
+            const tbody = document.getElementById("auditLogsTableBody");
+            tbody.innerHTML = "";
+            data.data.forEach(l => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td style="font-family: monospace; color: #64748b;">${l.id}</td>
+                    <td><strong>${l.operator}</strong></td>
+                    <td><span class="badge badge-info">${l.action}</span></td>
+                    <td style="font-size: 12px; color: #334155;">${l.detail}</td>
+                    <td style="font-size: 12px; color: #64748b;">${l.created_at}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 8. 对账规则配置
+        async function loadConfig() {
+            const res = await fetch("/api/config", { headers: { "X-Session-Token": currentToken } });
+            const data = await res.json();
+            if(data.code !== 0) return;
+            const c = data.data;
+            document.getElementById("cfg_cutoff").value = c.cutoff_date || "";
+            document.getElementById("cfg_initial_cash").value = c.initial_cash_balance;
+            document.getElementById("cfg_fee_rate").value = c.fee_baseline_rate;
+            document.getElementById("cfg_jump_threshold").value = c.commission_jump_threshold;
+            document.getElementById("cfg_ins_standard").value = c.insurance_claim_standard;
+            document.getElementById("cfg_tolerance").value = c.tolerance;
+        }
+
+        async function saveReconcileConfig() {
+            const payload = {
+                cutoff_date: document.getElementById("cfg_cutoff").value,
+                initial_cash_balance: document.getElementById("cfg_initial_cash").value,
+                fee_baseline_rate: document.getElementById("cfg_fee_rate").value,
+                commission_jump_threshold: document.getElementById("cfg_jump_threshold").value,
+                insurance_claim_standard: document.getElementById("cfg_ins_standard").value,
+                tolerance: document.getElementById("cfg_tolerance").value,
+            };
+            const res = await fetch("/api/config", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "X-Session-Token": currentToken },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            alert(data.msg);
+            if(data.code === 0) loadDashboard();
+        }
+
+        // CSV 上传模态框逻辑
+        function openUploadCsvModal() { document.getElementById("uploadCsvModal").classList.remove("hidden"); }
+        function closeUploadCsvModal() { document.getElementById("uploadCsvModal").classList.add("hidden"); }
+
+        function submitUploadCsv() {
+            const fileType = document.getElementById("csvFileType").value;
+            const fileInput = document.getElementById("csvFileInput");
+            if(!fileInput.files || fileInput.files.length === 0) return alert("请先选择 CSV 文件！");
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const content = e.target.result;
+                const res = await fetch("/api/upload-csv", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "X-Session-Token": currentToken },
+                    body: JSON.stringify({ file_type: fileType, content: content })
+                });
+                const data = await res.json();
+                alert(data.msg);
+                if(data.code === 0) {
+                    closeUploadCsvModal();
+                    loadDashboard();
+                }
+            };
+            reader.readAsText(fileInput.files[0], "utf-8");
+        }
+
         // 批量压测生成
         async function triggerBatchGen(cnt) {
-            if(!confirm(`确认注入 ${cnt} 笔真实电商脏数据流水？这将刷新 SQLite 数据库中的业务单据。`)) return;
+            if(!confirm(`确认注入 ${cnt} 笔真实电商脏数据流水？这将重构 SQLite 数据库中的业务单据。`)) return;
             const res = await fetch("/api/generate-batch", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "X-Session-Token": currentToken },
