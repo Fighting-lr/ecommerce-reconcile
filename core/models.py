@@ -16,12 +16,25 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 
+def clean_money_str(s: str) -> str:
+    """清理字符串中的货币符号、千分位逗号与首尾空白"""
+    if not isinstance(s, str):
+        return str(s)
+    return s.replace("¥", "").replace("$", "").replace("￥", "").replace(",", "").strip()
+
+
 def money(val: Any) -> Decimal:
-    """转换为保留两位小数的 Decimal 金额（四舍五入）"""
+    """转换为保留两位小数的 Decimal 金额（四舍五入），兼容千分位格式与常见货币符号"""
     if val is None or val == "":
         return Decimal("0.00")
     if isinstance(val, (int, str)):
-        return Decimal(str(val)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        s = clean_money_str(str(val))
+        if not s:
+            return Decimal("0.00")
+        try:
+            return Decimal(s).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        except Exception:
+            raise ValueError(f"无法将 '{val}' 解析为有效财务金额（请输入标准数字或千分位格式如 1,000.00）")
     if isinstance(val, float):
         return Decimal(f"{val:.4f}").quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     if isinstance(val, Decimal):

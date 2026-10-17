@@ -30,6 +30,21 @@ from core.accounting_balancer import AccountingBalancer
 from core.dirty_data_generator import DirtyDataGenerator
 
 
+def _parse_amount(raw_val: Any, field_name: str, allow_negative: bool = False, max_val: Optional[Decimal] = None) -> Decimal:
+    """安全解析金额并执行业务边界校验"""
+    if raw_val is None or str(raw_val).strip() == "":
+        return Decimal("0.00")
+    try:
+        amt = money(raw_val)
+    except Exception:
+        raise ValueError(f"【{field_name}】格式不合法，请输入标准有效数字（支持千分位格式如 1,000.00）")
+    if not allow_negative and amt < Decimal("0.00"):
+        raise ValueError(f"【{field_name}】不能为负数（输入值为: ¥{amt}），若为退款请在专门的退款字段中填写正数金额")
+    if max_val is not None and amt > max_val:
+        raise ValueError(f"【{field_name}】(¥{amt}) 不能大于订单实付金额上限 (¥{max_val})")
+    return amt
+
+
 class ReconcileHttpHandler(BaseHTTPRequestHandler):
     db: DatabaseManager = None
     auth: AuthManager = None
@@ -86,6 +101,21 @@ class ReconcileHttpHandler(BaseHTTPRequestHandler):
         path = parsed.path
         query = urllib.parse.parse_qs(parsed.query)
 
+        # 0. 标准 CSV 账单模板下载
+        if path == "/api/templates/download":
+            tmpl_type = query.get("type", ["orders"])[0]
+            if tmpl_type == "orders":
+                content = "订单编号,买家会员名,商品名称,商品标价总额,店铺自主优惠,平台跨店满减补贴,运费收取,买家实付金额,订单状态,商品采购成本,退款金额,退款申请时间,下单时间\nTB20261000001,USR_1001,冬季法兰绒加厚家居服,89.90,5.00,0.00,0.00,84.90,PAID,32.00,0.00,,2026-10-01 10:00:00\n"
+                return self._send_csv("orders_template.csv", content)
+            elif tmpl_type == "payments":
+                content = "商户订单号,业务订单号,支付渠道,交易类型,结算金额,渠道手续费,支付状态,划款时间\nPAY_TB20261000001,TB20261000001,ALIPAY,PAY,84.90,0.51,SUCCESS,2026-10-01 10:00:00\n"
+                return self._send_csv("payments_template.csv", content)
+            elif tmpl_type == "logistics":
+                content = "运单号,关联订单号,承运商,基础运费,超重补扣费,运费险保费代扣,运费险理赔到账金额,发货时间,履约状态\nSF_TB20261000001,TB20261000001,SF,4.50,0.00,0.80,0.00,2026-10-01 10:00:00,DELIVERED\n"
+                return self._send_csv("logistics_template.csv", content)
+            else:
+                return self._send_json({"code": 400, "msg": "不支持的模板类型，仅支持 orders, payments, logistics"}, 400)
+
         # 1. 登录会话探活
         if path == "/api/me":
             user = self._get_auth_user()
@@ -93,7 +123,7 @@ class ReconcileHttpHandler(BaseHTTPRequestHandler):
                 return self._send_json({"code": 401, "msg": "未登录或会话已过期"}, 401)
             return self._send_json({"code": 0, "data": user})
 
-        # 2. 对账大盘核心 KPI (联动人工调账后平账率与待查差错)
+        # 2. 对账大盘核心 KPI (联动人工调账后平账率、待查差错与演示数据标记)
         if path == "/api/dashboard":
             user = self._get_auth_user()
             if not user:
@@ -107,6 +137,9 @@ class ReconcileHttpHandler(BaseHTTPRequestHandler):
             with self.db.get_connection() as conn:
                 pending_count = conn.execute("SELECT COUNT(*) FROM discrepancies WHERE process_status = 'PENDING'").fetchone()[0]
                 resolved_count = conn.execute("SELECT COUNT(*) FROM discrepancies WHERE process_status = 'RESOLVED'").fetchone()[0]
+                # 检测当前是否为包含演示压测数据的环境 (以 TB202609 前缀判定)
+                sample = conn.execute("SELECT order_id FROM orders LIMIT 20").fetchall()
+                is_demo_data = bool(sample and any(r["order_id"].startswith("TB202609") for r in sample))
 
             sum_data = reconcile_res["summary"]
             tot_orders = sum_data["total_orders"]
@@ -120,6 +153,7 @@ class ReconcileHttpHandler(BaseHTTPRequestHandler):
             return self._send_json({
                 "code": 0,
                 "data": {
+                    "is_demo_data": is_demo_data,
                     "summary": sum_data,
                     "balance": balance_res,
                     "config": {
@@ -314,21 +348,45 @@ class ReconcileHttpHandler(BaseHTTPRequestHandler):
         if not user:
             return self._send_json({"code": 401, "msg": "需要登录后访问"}, 401)
 
-        # 3. 核心功能：单笔交易实时录入并触发即时对账 (补齐所有财务与履约字段)
+        # 3. 核心功能：单笔交易实时录入并触发即时对账 (安全金额校验与防静默覆盖)
         if path == "/api/submit-single":
             try:
-                order_id = body.get("order_id", f"TB_LIVE_{int(datetime.now().timestamp())}")
-                user_id = body.get("user_id", "USR_LIVE")
-                prod_name = body.get("product_name", "小微电商实测商品")
-                goods_amt = money(body.get("goods_amount", "99.00"))
-                shop_disc = money(body.get("shop_discount", "0.00"))
-                plat_coupon = money(body.get("platform_coupon", "0.00"))
-                freight = money(body.get("freight_fee", "0.00"))
-                actual_payable = money(goods_amt - shop_disc - plat_coupon + freight)
-                goods_cost = money(body.get("goods_cost", "32.00"))
-                order_status = body.get("order_status", "PAID")
-                refund_amt = money(body.get("refund_amount", "0.00"))
-                refund_time = body.get("refund_time", None)
+                order_id = str(body.get("order_id", f"TB_LIVE_{int(datetime.now().timestamp())}")).strip()
+                if not order_id:
+                    return self._send_json({"code": 400, "msg": "业务订单号不能为空"}, 400)
+
+                allow_overwrite = bool(body.get("allow_overwrite", False))
+                existing_order = self.db.get_order(order_id)
+                if existing_order and not allow_overwrite:
+                    return self._send_json({
+                        "code": 409,
+                        "msg": f"业务订单号【{order_id}】已存在于数据库中（原商品: {existing_order['product_name']}，原买家实付: ¥{existing_order['actual_payable']}）。请确认是否要覆盖已有单据？",
+                        "data": {
+                            "exists": True,
+                            "existing_order": {
+                                "order_id": existing_order["order_id"],
+                                "product_name": existing_order["product_name"],
+                                "actual_payable": existing_order["actual_payable"],
+                                "order_status": existing_order["order_status"],
+                                "created_at": existing_order["created_at"]
+                            }
+                        }
+                    }, 409)
+
+                user_id = str(body.get("user_id", "USR_LIVE")).strip() or "USR_LIVE"
+                prod_name = str(body.get("product_name", "小微电商实测商品")).strip() or "小微电商实测商品"
+
+                # 严格安全金额校验（支持千分位，杜绝负数干崩借贷平衡）
+                goods_amt = _parse_amount(body.get("goods_amount", "99.00"), "商品标价总额")
+                shop_disc = _parse_amount(body.get("shop_discount", "0.00"), "店铺自主优惠")
+                plat_coupon = _parse_amount(body.get("platform_coupon", "0.00"), "平台跨店满减补贴")
+                freight = _parse_amount(body.get("freight_fee", "0.00"), "运费收取")
+                goods_cost = _parse_amount(body.get("goods_cost", "32.00"), "商品采购成本")
+
+                actual_payable = money(max(Decimal("0.00"), goods_amt - shop_disc - plat_coupon + freight))
+                order_status = str(body.get("order_status", "PAID")).strip() or "PAID"
+                refund_amt = _parse_amount(body.get("refund_amount", "0.00"), "退款金额", max_val=actual_payable)
+                refund_time = str(body.get("refund_time", "")).strip() or None
                 now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
                 # 构建业务订单
@@ -339,29 +397,29 @@ class ReconcileHttpHandler(BaseHTTPRequestHandler):
                     goods_cost=goods_cost, refund_amount=refund_amt, refund_time=refund_time,
                     created_at=now_str
                 )
-                self.db.insert_order(order)
+                self.db.insert_order(order, overwrite=True)
 
                 # 构建支付流水
-                pay_amt = money(body.get("pay_amount", actual_payable))
-                pay_fee = money(body.get("channel_fee", pay_amt * Decimal("0.006")))
-                trans_time = body.get("trans_time", now_str)
+                pay_amt = _parse_amount(body.get("pay_amount", actual_payable), "渠道实际入账扣款金额")
+                pay_fee = _parse_amount(body.get("channel_fee", pay_amt * Decimal("0.006")), "渠道手续费/平台佣金")
+                trans_time = str(body.get("trans_time", "")).strip() or now_str
                 pay = PaymentRecord(
                     pay_flow_id=f"PAY_{order_id}", order_id=order_id,
-                    channel=body.get("channel", "ALIPAY"), trans_type="PAY",
+                    channel=str(body.get("channel", "ALIPAY")).strip() or "ALIPAY", trans_type="PAY",
                     trans_amount=pay_amt, channel_fee=pay_fee,
                     channel_status="SUCCESS", trans_time=trans_time
                 )
                 self.db.insert_payment(pay)
 
                 # 构建物流履约
-                ship_fee = money(body.get("shipping_fee", "4.50"))
-                overweight = money(body.get("overweight_fee", "0.00"))
-                ins_fee = money(body.get("freight_insurance_fee", "0.80"))
-                ins_claim = money(body.get("insurance_claim_amount", "0.00"))
-                delivery_status = body.get("delivery_status", "DELIVERED")
+                ship_fee = _parse_amount(body.get("shipping_fee", "4.50"), "基础运费")
+                overweight = _parse_amount(body.get("overweight_fee", "0.00"), "超重补扣费")
+                ins_fee = _parse_amount(body.get("freight_insurance_fee", "0.80"), "运费险保费代扣")
+                ins_claim = _parse_amount(body.get("insurance_claim_amount", "0.00"), "运费险理赔到账金额")
+                delivery_status = str(body.get("delivery_status", "DELIVERED")).strip() or "DELIVERED"
                 log = LogisticsRecord(
                     tracking_no=f"SF_{order_id}", order_id=order_id,
-                    carrier=body.get("carrier", "SF"), shipping_fee=ship_fee,
+                    carrier=str(body.get("carrier", "SF")).strip() or "SF", shipping_fee=ship_fee,
                     overweight_fee=overweight, freight_insurance_fee=ins_fee,
                     insurance_claim_amount=ins_claim, ship_time=now_str,
                     delivery_status=delivery_status
@@ -377,13 +435,17 @@ class ReconcileHttpHandler(BaseHTTPRequestHandler):
                 all_res = self.engine.reconcile(all_o, all_p, all_l)
                 self.db.save_discrepancies(all_res["discrepancies"])
 
-                self.db.record_audit_log(user["username"], "REALTIME_SUBMIT", f"实时录入订单: {order_id}")
+                if existing_order:
+                    self.db.record_audit_log(user["username"], "OVERWRITE_ORDER", f"覆盖已存在订单: {order_id} (原买家实付 ¥{existing_order['actual_payable']} -> 新买家实付 ¥{actual_payable})")
+                else:
+                    self.db.record_audit_log(user["username"], "REALTIME_SUBMIT", f"实时录入新订单: {order_id} (金额: ¥{actual_payable})")
 
                 return self._send_json({
                     "code": 0,
-                    "msg": "单据已成功入库并完成三方对账判定",
+                    "msg": "单据已成功入库并完成三方对账判定" + ("（已覆盖旧单）" if existing_order else ""),
                     "data": {
                         "order_id": order_id,
+                        "is_overwritten": bool(existing_order),
                         "is_matched": discrepancy is None,
                         "discrepancy": {
                             "status": discrepancy.reconcile_status.value,
@@ -394,13 +456,18 @@ class ReconcileHttpHandler(BaseHTTPRequestHandler):
                         } if discrepancy else None
                     }
                 })
+            except ValueError as ve:
+                return self._send_json({"code": 400, "msg": str(ve)}, 400)
             except Exception as e:
                 return self._send_json({"code": 500, "msg": f"录入失败: {str(e)}"}, 500)
 
-        # 4. 批量生成脏数据压测流水 (RBAC: 仅管理员与店长运营可操作)
+        # 4. 批量生成脏数据压测流水 (RBAC: 仅超级管理员 Admin 可操作，店长与审计员严密拦截)
         if path == "/api/generate-batch":
-            if user["role"] == "auditor":
-                return self._send_json({"code": 403, "msg": "只读审计员无权执行数据库重构与压测生成操作"}, 403)
+            if user["role"] != "admin":
+                return self._send_json({
+                    "code": 403,
+                    "msg": "高危操作拦截：批量注入压测数据将覆盖清空全库真实单据，仅超级管理员 (Admin) 允许操作。店长运营 (Operator) 与审计员无权执行此操作。"
+                }, 403)
 
             count = int(body.get("count", 500))
             generator = DirtyDataGenerator()
@@ -437,9 +504,12 @@ class ReconcileHttpHandler(BaseHTTPRequestHandler):
         # 7. CSV 账单批量上传解析导入
         if path == "/api/upload-csv":
             file_type = body.get("file_type")  # "orders", "payments", "logistics"
+            if file_type not in ["orders", "payments", "logistics"]:
+                return self._send_json({"code": 400, "msg": f"不支持的单据类型: '{file_type}'。系统仅支持 orders, payments, logistics"}, 400)
+
             content = body.get("content", "")
-            if not file_type or not content:
-                return self._send_json({"code": 400, "msg": "必须指定 file_type 与 content"}, 400)
+            if not content:
+                return self._send_json({"code": 400, "msg": "CSV 账单文件内容不能为空"}, 400)
 
             try:
                 imported_cnt = self.db.import_csv_data(file_type, content)

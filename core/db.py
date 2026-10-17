@@ -166,8 +166,23 @@ class DatabaseManager:
             rows = conn.execute("SELECT * FROM audit_logs ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
             return [dict(r) for r in rows]
 
-    def insert_order(self, order: OrderRecord):
+    def get_order(self, order_id: str) -> Optional[Dict[str, Any]]:
+        """获取单个订单记录"""
         with self.get_connection() as conn:
+            row = conn.execute("SELECT * FROM orders WHERE order_id = ?", (order_id,)).fetchone()
+            return dict(row) if row else None
+
+    def insert_order(self, order: OrderRecord, overwrite: bool = True) -> Tuple[bool, Optional[Dict[str, Any]]]:
+        """
+        插入或更新订单记录。
+        如果订单已存在且 overwrite=False，则拒绝静默覆盖，返回 (False, existing_order_dict)；
+        如果允许覆盖或记录为新增，则执行写入并返回 (True, existing_order_dict)。
+        """
+        with self.get_connection() as conn:
+            existing = conn.execute("SELECT * FROM orders WHERE order_id = ?", (order.order_id,)).fetchone()
+            if existing and not overwrite:
+                return False, dict(existing)
+
             conn.execute("""
             INSERT OR REPLACE INTO orders (
                 order_id, user_id, product_name, goods_amount, shop_discount,
@@ -181,6 +196,7 @@ class DatabaseManager:
                 str(order.goods_cost), str(order.refund_amount), order.refund_time, order.created_at
             ))
             conn.commit()
+            return True, dict(existing) if existing else None
 
     def insert_payment(self, pay: PaymentRecord):
         with self.get_connection() as conn:
@@ -366,13 +382,68 @@ class DatabaseManager:
         return orders, payments, logistics
 
     def import_csv_data(self, file_type: str, csv_content: str) -> int:
-        """从 CSV 文本批量导入单据数据 (orders, payments, logistics)"""
+        """
+        从 CSV 文本批量导入单据数据 (orders, payments, logistics)。
+        支持主流电商平台（千牛、抖店、微信商户、支付宝、顺丰、菜鸟）列名别名自动映射与金额千分位清洗。
+        """
+        valid_types = ["orders", "payments", "logistics"]
+        if file_type not in valid_types:
+            raise ValueError(f"不支持的单据类型 '{file_type}'，仅支持 orders, payments, logistics")
+
+        # 过滤 UTF-8 BOM
+        if csv_content.startswith("\ufeff"):
+            csv_content = csv_content[1:]
+
         reader = csv.DictReader(io.StringIO(csv_content))
+        if not reader.fieldnames:
+            return 0
+
+        def get_val(row: Dict[str, Any], aliases: List[str], default: Any = None) -> Any:
+            for alias in aliases:
+                for k, v in row.items():
+                    if k and k.strip().lower() == alias.lower():
+                        val = str(v).strip()
+                        if val != "":
+                            return val
+            return default
+
         count = 0
         with self.get_connection() as conn:
             if file_type == "orders":
+                aliases_order_id = ["order_id", "订单编号", "主订单编号", "业务单号", "订单号", "商户订单号", "订单ID"]
+                aliases_user_id = ["user_id", "买家会员名", "买家昵称", "客户ID", "用户标识", "买家账号", "用户ID"]
+                aliases_prod_name = ["product_name", "商品名称", "商品标题", "宝贝标题", "商品描述", "商品"]
+                aliases_goods_amt = ["goods_amount", "商品标价总额", "商品总价", "标价", "商品金额", "标价总额"]
+                aliases_shop_disc = ["shop_discount", "店铺自主优惠", "店铺优惠", "商家优惠", "店铺减免", "优惠金额"]
+                aliases_plat_coupon = ["platform_coupon", "平台跨店满减补贴", "平台优惠", "跨店满减", "平台补贴", "平台券"]
+                aliases_freight = ["freight_fee", "运费收取", "运费金额", "运费", "买家付运费"]
+                aliases_payable = ["actual_payable", "买家实付应收", "买家实付金额", "买家应付金额", "实付金额", "订单实付金额", "买家实际支付金额"]
+                aliases_status = ["order_status", "订单状态", "交易状态", "状态"]
+                aliases_cost = ["goods_cost", "商品采购成本", "采购成本", "成本价", "商品成本", "成本"]
+                aliases_refund_amt = ["refund_amount", "退款金额", "退款总额", "累计退款", "已退金额"]
+                aliases_refund_time = ["refund_time", "退款时间", "退款申请时间", "退款成功时间"]
+                aliases_created_at = ["created_at", "下单时间", "创建时间", "交易创建时间", "订单创建时间"]
+
                 for row in reader:
-                    cost = row.get("goods_cost", "0.00")
+                    oid = get_val(row, aliases_order_id)
+                    if not oid:
+                        continue
+                    prod = get_val(row, aliases_prod_name, "标准电商商品")
+                    g_amt = money(get_val(row, aliases_goods_amt, "0.00"))
+                    d_amt = money(get_val(row, aliases_shop_disc, "0.00"))
+                    c_amt = money(get_val(row, aliases_plat_coupon, "0.00"))
+                    f_amt = money(get_val(row, aliases_freight, "0.00"))
+                    raw_pay = get_val(row, aliases_payable)
+                    if raw_pay is not None:
+                        act_pay = money(raw_pay)
+                    else:
+                        act_pay = money(max(Decimal("0.00"), g_amt - d_amt - c_amt + f_amt))
+                    cost = money(get_val(row, aliases_cost, "0.00"))
+                    ref_amt = money(get_val(row, aliases_refund_amt, "0.00"))
+                    ref_time = get_val(row, aliases_refund_time)
+                    stat = get_val(row, aliases_status, "PAID")
+                    crt = get_val(row, aliases_created_at, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+
                     conn.execute("""
                     INSERT OR REPLACE INTO orders (
                         order_id, user_id, product_name, goods_amount, shop_discount,
@@ -380,43 +451,75 @@ class DatabaseManager:
                         goods_cost, refund_amount, refund_time, created_at
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, (
-                        row["order_id"], row.get("user_id", "USR_CSV"), row["product_name"],
-                        row["goods_amount"], row.get("shop_discount", "0.00"),
-                        row.get("platform_coupon", "0.00"), row.get("freight_fee", "0.00"),
-                        row["actual_payable"], row.get("order_status", "PAID"),
-                        cost, row.get("refund_amount", "0.00"),
-                        row.get("refund_time", None), row.get("created_at", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                        oid, get_val(row, aliases_user_id, "USR_CSV"), prod,
+                        str(g_amt), str(d_amt), str(c_amt), str(f_amt), str(act_pay),
+                        stat, str(cost), str(ref_amt), ref_time, crt
                     ))
                     count += 1
 
             elif file_type == "payments":
+                aliases_pay_flow = ["pay_flow_id", "商户订单号", "平台流水号", "交易流水号", "渠道流水号", "外部交易号", "支付宝交易号", "微信支付单号", "支付单号", "流水号"]
+                aliases_order_id = ["order_id", "业务订单号", "商户业务订单号", "商户订单号", "关联订单号", "订单号", "订单编号"]
+                aliases_channel = ["channel", "支付渠道", "交易渠道", "渠道", "收款方式"]
+                aliases_trans_type = ["trans_type", "业务类型", "交易类型", "收支类型", "收支类别", "类型"]
+                aliases_trans_amount = ["trans_amount", "结算金额", "交易金额", "收支金额", "金额", "入账金额", "实际金额"]
+                aliases_channel_fee = ["channel_fee", "渠道手续费", "手续费", "服务费", "平台提成", "费率扣除"]
+                aliases_channel_status = ["channel_status", "支付状态", "交易状态", "状态", "结算状态"]
+                aliases_trans_time = ["trans_time", "划款时间", "入账时间", "交易时间", "完成时间", "支付时间"]
+
                 for row in reader:
+                    flow_id = get_val(row, aliases_pay_flow)
+                    oid = get_val(row, aliases_order_id)
+                    if not flow_id or not oid:
+                        continue
+                    t_amt = money(get_val(row, aliases_trans_amount, "0.00"))
+                    c_fee = money(get_val(row, aliases_channel_fee, "0.00"))
+                    c_stat = get_val(row, aliases_channel_status, "SUCCESS")
+                    t_time = get_val(row, aliases_trans_time, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
                     conn.execute("""
                     INSERT OR REPLACE INTO payments (
                         pay_flow_id, order_id, channel, trans_type, trans_amount,
                         channel_fee, channel_status, trans_time
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                     """, (
-                        row["pay_flow_id"], row["order_id"], row.get("channel", "ALIPAY"),
-                        row.get("trans_type", "PAY"), row["trans_amount"],
-                        row.get("channel_fee", "0.00"), row.get("channel_status", "SUCCESS"),
-                        row.get("trans_time", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                        flow_id, oid, get_val(row, aliases_channel, "ALIPAY"),
+                        get_val(row, aliases_trans_type, "PAY"), str(t_amt),
+                        str(c_fee), c_stat, t_time
                     ))
                     count += 1
 
             elif file_type == "logistics":
+                aliases_tracking_no = ["tracking_no", "运单号", "快递单号", "物流单号", "包裹单号", "面单号"]
+                aliases_order_id = ["order_id", "关联订单号", "业务单号", "订单号", "商户订单号", "订单编号"]
+                aliases_carrier = ["carrier", "承运商", "快递公司", "物流公司", "物流承运商", "承运人"]
+                aliases_shipping_fee = ["shipping_fee", "基础运费", "运费", "实收运费", "配送费", "运费金额"]
+                aliases_overweight_fee = ["overweight_fee", "超重费", "超重补扣费", "超重运费", "续重运费"]
+                aliases_ins_fee = ["freight_insurance_fee", "运费险保费代扣", "运费险保费", "保费", "运费险"]
+                aliases_claim_amt = ["insurance_claim_amount", "运费险理赔到账金额", "理赔金额", "赔付金额", "理赔款"]
+                aliases_ship_time = ["ship_time", "发货时间", "寄件时间", "交寄时间", "揽件时间"]
+                aliases_delivery_status = ["delivery_status", "履约状态", "签收状态", "物流状态", "配送状态"]
+
                 for row in reader:
+                    track_no = get_val(row, aliases_tracking_no)
+                    oid = get_val(row, aliases_order_id)
+                    if not track_no or not oid:
+                        continue
+                    s_fee = money(get_val(row, aliases_shipping_fee, "4.50"))
+                    ow_fee = money(get_val(row, aliases_overweight_fee, "0.00"))
+                    i_fee = money(get_val(row, aliases_ins_fee, "0.80"))
+                    c_amt = money(get_val(row, aliases_claim_amt, "0.00"))
+                    s_time = get_val(row, aliases_ship_time, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                    d_stat = get_val(row, aliases_delivery_status, "DELIVERED")
+
                     conn.execute("""
                     INSERT OR REPLACE INTO logistics (
                         tracking_no, order_id, carrier, shipping_fee, overweight_fee,
                         freight_insurance_fee, insurance_claim_amount, ship_time, delivery_status
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, (
-                        row["tracking_no"], row["order_id"], row.get("carrier", "SF"),
-                        row.get("shipping_fee", "4.50"), row.get("overweight_fee", "0.00"),
-                        row.get("freight_insurance_fee", "0.80"), row.get("insurance_claim_amount", "0.00"),
-                        row.get("ship_time", datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
-                        row.get("delivery_status", "DELIVERED")
+                        track_no, oid, get_val(row, aliases_carrier, "SF"),
+                        str(s_fee), str(ow_fee), str(i_fee), str(c_amt),
+                        s_time, d_stat
                     ))
                     count += 1
 

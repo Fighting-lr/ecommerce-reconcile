@@ -71,7 +71,33 @@ class TestDatabaseAndAuth(unittest.TestCase):
         self.assertEqual(orders[0].order_id, "TB_TEST_999")
         self.assertEqual(orders[0].actual_payable, Decimal("279.00"))
 
+    def test_amount_validation_helper(self):
+        """测试 Web 服务层安全金额解析与业务边界防护 (P1 金额防穿透)"""
+        from web.server import _parse_amount
+
+        # 正常合法金额与千分位
+        self.assertEqual(_parse_amount("1,000.00", "实付金额"), Decimal("1000.00"))
+        self.assertEqual(_parse_amount("¥89.90", "实付金额"), Decimal("89.90"))
+        self.assertEqual(_parse_amount("", "优惠金额"), Decimal("0.00"))
+        self.assertEqual(_parse_amount(None, "优惠金额"), Decimal("0.00"))
+
+        # 负数拦截 (杜绝负数单干崩借贷试算平衡)
+        with self.assertRaises(ValueError) as ctx:
+            _parse_amount("-50.00", "商品标价")
+        self.assertIn("不能为负数", str(ctx.exception))
+
+        # 非法字符拦截 (杜绝 ConversionSyntax 500 异常)
+        with self.assertRaises(ValueError) as ctx:
+            _parse_amount("abc", "商品标价")
+        self.assertIn("格式不合法", str(ctx.exception))
+
+        # 退款上限约束拦截 (退款金额不能超过订单应收)
+        with self.assertRaises(ValueError) as ctx:
+            _parse_amount("120.00", "退款金额", max_val=Decimal("100.00"))
+        self.assertIn("不能大于订单实付金额上限", str(ctx.exception))
+
 
 if __name__ == "__main__":
     unittest.main()
 # /* StarOfCAU-END */
+
