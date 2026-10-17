@@ -125,4 +125,4 @@ python -m unittest discover tests -v
 ## 📄 开源许可证与版权
 
 本项目采用 [MIT License](LICENSE) 开源协议。  
-Copyright (c) 2026 StarOfCAU (Li Rui).
+Copyright (c) 2026 StarOfCAU.

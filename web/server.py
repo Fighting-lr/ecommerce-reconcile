@@ -596,7 +596,7 @@ def run_web_server(port: int = 8088, db_path: str = "data/reconcile.db"):
     server_address = ("", port)
     httpd = HTTPServer(server_address, ReconcileHttpHandler)
     print(f"\n=======================================================")
-    print(f"🚀 企业级全栈对账交互工作台 v2.1 已在本地启动!")
+    print(f"🚀 企业级全栈对账交互工作台 v1.0 已在本地启动!")
     print(f"👉 访问地址: http://localhost:{port}")
     print(f"🔑 默认账号密码:")
     print(f"   - 审计员 (Auditor)  : auditor  / auditor123")
