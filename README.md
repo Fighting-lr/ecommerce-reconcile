@@ -1,7 +1,7 @@
 # 🏛️ 小微电商多渠道资金对账与年审异常核算系统 (Ecommerce Reconcile & Audit Engine)
 
 <p align="center">
-  <a href="https://github.com/StarOfCAU/ecommerce-reconcile/actions"><img src="https://img.shields.io/badge/CI-Passing-brightgreen.svg" alt="CI Status"></a>
+  <a href="https://github.com/Fighting-lr/ecommerce-reconcile/actions"><img src="https://img.shields.io/badge/CI-Passing-brightgreen.svg" alt="CI Status"></a>
   <img src="https://img.shields.io/badge/Python-3.9%20|%203.10%20|%203.11%20|%203.12-blue.svg" alt="Python Versions">
   <img src="https://img.shields.io/badge/Dependencies-Zero%20(Pure%20Standard%20Lib)-success.svg" alt="Zero Dependencies">
   <img src="https://img.shields.io/badge/Database-SQLite%20ACID-orange.svg" alt="SQLite ACID">
